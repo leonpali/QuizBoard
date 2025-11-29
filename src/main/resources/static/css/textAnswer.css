@@ -1,0 +1,16 @@
+.answer-div {
+    width: 60vw;
+    height: 90vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 auto;
+}
+
+.answer {
+    white-space: normal;
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
+    font-size: 4em;
+    text-align: center;
+}
