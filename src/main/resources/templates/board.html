@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Board</title>
+    <link rel="stylesheet" th:href="@{/css/board.css}" />
+</head>
+<body>
+    <div class="board-div">
+        <table class="board">
+            <thead>
+                <tr>
+                 <th th:each="cat : ${categories}" th:text="${cat.getName()}"> Category</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="row : ${#numbers.sequence(1,6)}">
+                    <td class="table-cell" th:each="cat : ${categories}">
+                        <button class="question-button" type="button" th:text="${row * 100}">100</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

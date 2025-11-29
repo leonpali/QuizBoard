@@ -1,0 +1,34 @@
+.board-div {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.board {
+    width: 90vw;
+    height: 90vh;
+    border-collapse: separate;
+    border-spacing: 20px 10px;
+    table-layout: fixed;
+}
+
+.table-cell {
+    text-align: center;
+}
+
+.question-button {
+    width: 100%;
+    height: 100%;
+    padding: 20px;
+    font-size: 2rem;
+    background: #ffcc00;
+    color: black;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.question-button:hover {
+    background: #ffdf5a;
+}
