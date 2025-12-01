@@ -1,10 +1,12 @@
 package projects.kotlin.quizabfahrt.parser
 
+import org.springframework.stereotype.Service
 import projects.kotlin.quizabfahrt.model.*
 import java.io.File
 import java.util.LinkedList
 import java.util.Scanner
 
+@Service
 class CompilationEngine {
 
     companion object {
@@ -31,12 +33,20 @@ class CompilationEngine {
     fun compile() {
         for (f: File in allFiles) {
             sc = Scanner(f)
-            allBoards.add(compileBoard())
+            advanceToken()
+            val board = compileBoard()
+            allBoards.add(board)
+            sc!!.close()
         }
     }
 
     private fun advanceToken() {
-        currentToken = sc!!.nextLine()
+        if (sc!!.hasNext()) {
+            currentToken = sc!!.nextLine()
+        } else {
+            currentToken = "__EOF__"
+        }
+        currentToken = currentToken.trimStart()
     }
 
     private fun loadFiles(): List<File> {
@@ -53,7 +63,7 @@ class CompilationEngine {
         currentBoardId++
         val categories = LinkedList<Category>()
 
-        while (sc!!.hasNext()) {
+        while (currentToken != "__EOF__") {
             categories.add(compileCategory())
         }
         return Board(id,categories)
@@ -73,7 +83,7 @@ class CompilationEngine {
 
             advanceToken()
 
-            while (!currentToken.contains("category")) {
+            while (!currentToken.contains("category") && currentToken != "__EOF__") {
                 questions.add(compileQuestion())
             }
         }
