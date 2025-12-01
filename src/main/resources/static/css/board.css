@@ -21,7 +21,7 @@
     height: 100%;
     padding: 20px;
     font-size: 2rem;
-    background: #ffcc00;
+    background: #a714d9;
     color: black;
     border: none;
     border-radius: 10px;
@@ -30,5 +30,5 @@
 }
 
 .question-button:hover {
-    background: #ffdf5a;
+    background: #ca49f5;
 }
