@@ -10,13 +10,17 @@
         <table class="board">
             <thead>
                 <tr>
-                 <th th:each="cat : ${categories}" th:text="${cat.getName()}"> Category</th>
+                 <th th:each="cat : ${categories}" th:text="${cat.getName()}" class="category"> Category</th>
                 </tr>
             </thead>
             <tbody>
-                <tr th:each="row : ${#numbers.sequence(1,6)}">
+                <tr th:each="i : ${#numbers.sequence(0,5)}">
                     <td class="table-cell" th:each="cat : ${categories}">
-                        <button class="question-button" type="button" th:text="${row * 100}">100</button>
+                        <button class="question-button"
+                                type="button"
+                                th:text="${cat.questions[i].points}"
+                                th:disabled="${cat.questions[i].asked}"
+                                th:classappend="${cat.questions[i].asked} ? ' disabled' : ''">100</button>
                     </td>
                 </tr>
             </tbody>

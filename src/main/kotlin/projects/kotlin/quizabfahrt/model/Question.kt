@@ -6,5 +6,6 @@ data class Question(
     val text: String?,
     val img: String?,
     val points: Int,
-    val answer: Answer
+    val answer: Answer,
+    var asked: Boolean = false
 )

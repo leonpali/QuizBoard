@@ -29,6 +29,18 @@
     font-weight: bold;
 }
 
+.question-button.disabled,
+.question-button:disabled {
+    background: #777777;
+    color: #cccccc;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
 .question-button:hover {
     background: #ca49f5;
+}
+
+.category {
+    font-size: xx-large;
 }
