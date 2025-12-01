@@ -8,6 +8,6 @@ class Parser {
     private val compiler = CompilationEngine()
 
     fun parse() {
-        val allTokens = compiler.compile()
+        compiler.compile()
     }
 }
