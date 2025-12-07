@@ -23,9 +23,7 @@ class BoardController(private val questionService: QuestionService) {
 
     @PostMapping("/board/{id}/{questionId}")
     fun chooseQuestion(model: Model, @PathVariable id: Int, @PathVariable questionId: Int): String {
-        val categoryIndex = questionId / 5
-        val qId = questionId % 5
-        questionService.changeAskedStatus(id,categoryIndex,qId)
+        questionService.changeAskedStatus(id,questionId)
         return "redirect:/board/${id+1}/question/$questionId"
     }
 }
