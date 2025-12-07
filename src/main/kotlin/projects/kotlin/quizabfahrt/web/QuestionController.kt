@@ -10,7 +10,9 @@ import projects.kotlin.quizabfahrt.application.service.QuestionService
 class QuestionController(private val questionService: QuestionService) {
 
     @GetMapping("/board/{id}/question/{questionId}")
-    fun question(model: Model, @PathVariable id: String, @PathVariable questionId: String): String {
+    fun question(model: Model, @PathVariable id: Int, @PathVariable questionId: Int): String {
+        val question = questionService.getQuestion(id, questionId)
+        model.addAttribute("question", question)
         return "textQuestion"
     }
 }
