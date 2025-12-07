@@ -1,4 +1,4 @@
-package projects.kotlin.quizabfahrt.parser
+package projects.kotlin.quizabfahrt.application.service.parser
 
 import org.springframework.stereotype.Service
 import projects.kotlin.quizabfahrt.model.*

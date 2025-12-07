@@ -16,11 +16,14 @@
             <tbody>
                 <tr th:each="i : ${#numbers.sequence(0,5)}">
                     <td class="table-cell" th:each="cat : ${categories}">
-                        <button class="question-button"
-                                type="button"
-                                th:text="${cat.questions[i].points}"
-                                th:disabled="${cat.questions[i].asked}"
-                                th:classappend="${cat.questions[i].asked} ? ' disabled' : ''">100</button>
+                        <form th:action="@{${id} + '/' + ${cat.questions[i].id}}" method="post">
+                            <button class="question-button"
+                                    type="submit"
+                                    th:text="${cat.questions[i].points}"
+                                    th:disabled="${cat.questions[i].asked}"
+                                    th:classappend="${cat.questions[i].asked} ? ' disabled' : ''">100
+                            </button>
+                        </form>
                     </td>
                 </tr>
             </tbody>

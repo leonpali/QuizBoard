@@ -3,19 +3,29 @@ package projects.kotlin.quizabfahrt.web
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.web.bind.annotation.GetMapping
-import projects.kotlin.quizabfahrt.model.Category
-import projects.kotlin.quizabfahrt.parser.CompilationEngine
-import projects.kotlin.quizabfahrt.parser.Parser
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import projects.kotlin.quizabfahrt.application.service.QuestionService
+import projects.kotlin.quizabfahrt.application.service.parser.CompilationEngine
 
 @Controller
-class BoardController() {
+class BoardController(private val questionService: QuestionService) {
 
-    @GetMapping("/board")
-    fun board(model: Model): String {
+    @GetMapping("/board/{id}")
+    fun board(model: Model, @PathVariable id: Int): String {
 
-        val categories = CompilationEngine.getBoard(0).categories
+        val categories = CompilationEngine.getBoard(id-1).categories
 
         model.addAttribute("categories", categories)
+        model.addAttribute("id", id-1)
         return "board"
+    }
+
+    @PostMapping("/board/{id}/{questionId}")
+    fun chooseQuestion(model: Model, @PathVariable id: Int, @PathVariable questionId: Int): String {
+        val categoryIndex = questionId / 5
+        val qId = questionId % 5
+        questionService.changeAskedStatus(id,categoryIndex,qId)
+        return "redirect:/board/${id+1}/question/$questionId"
     }
 }
