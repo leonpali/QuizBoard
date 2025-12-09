@@ -105,7 +105,7 @@ class CompilationEngine {
 
             when (typeString) {
                 "text" -> type = EQuestionTypes.TEXT
-                "image" -> type = EQuestionTypes.IMAGE
+                "img" -> type = EQuestionTypes.IMAGE
             }
             advanceToken()
 

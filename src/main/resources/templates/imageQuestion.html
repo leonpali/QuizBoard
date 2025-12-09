@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Image Question</title>
+    <link rel="stylesheet" th:href="@{/css/question.css}">
+</head>
+<body>
+    <div class="center-wrapper">
+        <div class="question-block">
+            <img th:src="@{'/images/' + ${question.img}}" alt="">
+            <form th:action="@{'/board/' + ${id} + '/question/' + ${question.id} + '/answer'}" method="get">
+                <button class="continue-button">Weiter</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
