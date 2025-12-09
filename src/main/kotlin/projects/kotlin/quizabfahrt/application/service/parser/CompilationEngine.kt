@@ -96,7 +96,7 @@ class CompilationEngine {
         var text: String? = ""
         var img: String? = ""
         var points = 100
-        var answer: Answer? = Answer(1,"1","1")
+        var answer: Answer? = Answer(1, EAnswerTypes.TEXT,"1","1")
 
         if (currentToken.contains("question")) {
             advanceToken()
@@ -110,13 +110,13 @@ class CompilationEngine {
             advanceToken()
 
             text = currentToken.drop(6)
-            if (text == "") {
+            if (text == "" || text == "null") {
                 text = null
             }
             advanceToken()
 
             img = currentToken.drop(5)
-            if (img == "") {
+            if (img == "" || img == "null") {
                 img = null
             }
             advanceToken()
@@ -136,24 +136,34 @@ class CompilationEngine {
 
         var text: String? = ""
         var img: String? = ""
+        var type = EAnswerTypes.TEXT
 
         if (currentToken.contains("answer")) {
             advanceToken()
 
+            val typeString = currentToken.drop(6)
+            when (typeString) {
+                "text" -> type = EAnswerTypes.TEXT
+                "img" -> type = EAnswerTypes.IMAGE
+                "textimage" -> type = EAnswerTypes.TEXTIMAGE
+            }
+
+            advanceToken()
+
             text = currentToken.drop(6)
-            if (text == "") {
+            if (text == "" || text == "null") {
                 text = null
             }
             advanceToken()
 
             img = currentToken.drop(5)
-            if (img == "") {
+            if (img == "" || img == "null") {
                 img = null
             }
         }
 
         advanceToken()
 
-        return Answer(id, text, img)
+        return Answer(id, type, text, img)
     }
 }
