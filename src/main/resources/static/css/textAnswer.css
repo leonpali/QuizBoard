@@ -1,16 +1,24 @@
-.answer-div {
-    width: 60vw;
-    height: 90vh;
+.center-wrapper {
+    height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
-    margin: 0 auto;
+}
+
+.answer-block {
+    text-align: center;
 }
 
 .answer {
+    width: 80vw;
+    font-size: 4em;
     white-space: normal;
     word-wrap: break-word;
     overflow-wrap: anywhere;
-    font-size: 4em;
-    text-align: center;
+}
+
+.continue-button {
+    margin-top: 30px;
+    font-size: 2em;
+    padding: 10px 20px;
 }
