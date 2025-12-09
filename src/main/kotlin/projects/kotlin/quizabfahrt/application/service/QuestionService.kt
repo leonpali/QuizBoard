@@ -23,10 +23,10 @@ class QuestionService {
     }
 
     private fun calculateCategoryIndex(questionId: Int): Int {
-        return questionId / 5
+        return questionId / 6
     }
 
     private fun calculateQuestionIndex(questionId: Int): Int {
-        return questionId % 5
+        return questionId % 6
     }
 }
