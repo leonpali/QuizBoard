@@ -8,7 +8,7 @@
 <body>
     <div class="center-wrapper">
         <div class="answer-block">
-            <p class="answer">Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat</p>
+            <p class="answer" th:text="${question.getAnswerText()}"></p>
             <form th:action="@{'/board/' + ${boardId}}" method="get">
                 <button class="continue-button">Weiter</button>
             </form>

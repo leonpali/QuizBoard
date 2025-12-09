@@ -8,4 +8,8 @@ data class Question(
     val points: Int,
     val answer: Answer,
     var asked: Boolean = false
-)
+) {
+    fun getAnswerText(): String {
+        return answer.text!!
+    }
+}

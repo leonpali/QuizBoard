@@ -13,6 +13,7 @@ class AnswerController(private val questionService: QuestionService) {
     fun answer(model: Model, @PathVariable id: Int, @PathVariable questionId: Int): String {
         val question = questionService.getQuestion(id-1, questionId)
         model.addAttribute("boardId", id)
+        model.addAttribute("question", question)
         return "textAnswer"
     }
 }
