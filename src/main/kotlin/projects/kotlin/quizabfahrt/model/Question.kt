@@ -12,4 +12,8 @@ data class Question(
     fun getAnswerText(): String {
         return answer.text!!
     }
+
+    fun getAnswerImage(): String {
+        return answer.img!!
+    }
 }

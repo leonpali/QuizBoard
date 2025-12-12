@@ -5,6 +5,7 @@ import org.springframework.ui.Model
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import projects.kotlin.quizabfahrt.application.service.QuestionService
+import projects.kotlin.quizabfahrt.model.EAnswerTypes
 
 @Controller
 class AnswerController(private val questionService: QuestionService) {
@@ -14,6 +15,11 @@ class AnswerController(private val questionService: QuestionService) {
         val question = questionService.getQuestion(id-1, questionId)
         model.addAttribute("boardId", id)
         model.addAttribute("question", question)
-        return "textAnswer"
+
+        return when (question.answer.type) {
+            EAnswerTypes.TEXT -> "textAnswer"
+            EAnswerTypes.IMAGE -> "imageAnswer"
+            EAnswerTypes.TEXTIMAGE -> "testAnswer"
+        }
     }
 }
