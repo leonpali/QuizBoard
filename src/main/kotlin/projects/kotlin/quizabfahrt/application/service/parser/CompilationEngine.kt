@@ -32,6 +32,8 @@ class CompilationEngine {
 
     fun compile() {
         for (f: File in allFiles) {
+            currentQuestionId = 0
+            currentCategoryId = 0
             sc = Scanner(f)
             advanceToken()
             val board = compileBoard()
