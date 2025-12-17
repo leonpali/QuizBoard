@@ -19,7 +19,7 @@ class AnswerController(private val questionService: QuestionService) {
         return when (question.answer.type) {
             EAnswerTypes.TEXT -> "textAnswer"
             EAnswerTypes.IMAGE -> "imageAnswer"
-            EAnswerTypes.TEXTIMAGE -> "testAnswer"
+            EAnswerTypes.TEXTIMAGE -> "textImageAnswer"
         }
     }
 }

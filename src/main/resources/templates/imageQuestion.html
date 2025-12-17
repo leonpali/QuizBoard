@@ -8,7 +8,7 @@
 <body>
     <div class="center-wrapper">
         <div class="question-block">
-            <img th:src="@{'/images/' + ${question.img}}" alt="">
+            <img class="question-image" th:src="@{'/images/' + ${question.img}}" alt="">
             <form th:action="@{'/board/' + ${id} + '/question/' + ${question.id} + '/answer'}" method="get">
                 <button class="continue-button">Weiter</button>
             </form>

@@ -17,6 +17,14 @@
     overflow-wrap: anywhere;
 }
 
+.answer-image {
+    max-width: 80vw;
+    max-height: 80vh;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+}
+
 .continue-button {
     margin-top: 30px;
     font-size: 2em;
