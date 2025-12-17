@@ -23,6 +23,7 @@
     width: auto;
     height: auto;
     object-fit: contain;
+    border: 2px solid #ccc;
 }
 
 .continue-button {
