@@ -30,3 +30,11 @@
     font-size: 2em;
     padding: 10px 20px;
 }
+
+.hidden {
+    visibility: hidden;
+}
+
+.visible {
+    visibility: visible;
+}

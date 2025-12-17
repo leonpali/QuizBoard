@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Question</title>
+    <link rel="stylesheet" th:href="@{/css/question.css}">
+    <script defer>
+        document.addEventListener("DOMContentLoaded", () => {
+            const strings = document.querySelectorAll("#strings p");
+            let index = 0;
+
+            document.getElementById('reveal-button').addEventListener('click', () => {
+                if (index < strings.length) {
+                    strings[index].classList.remove('hidden');
+                    strings[index].classList.add('visible');
+                    index++;
+                }
+            });
+        });
+    </script>
+</head>
+<body>
+    <div class="center-wrapper">
+        <div class="question-block">
+            <div id="strings">
+                <p th:each="s : ${lineUp}"
+                   class="hidden"
+                   th:text="${s}">Placeholder</p>
+            </div>
+            <form th:action="@{'/board/' + ${id} + '/question/' + ${question.id} + '/answer'}" method="get">
+                <button class="continue-button">Weiter</button>
+            </form>
+            <button class="continue-button" id="reveal-button">Aufdecken</button>
+        </div>
+    </div>
+</body>
+</html>

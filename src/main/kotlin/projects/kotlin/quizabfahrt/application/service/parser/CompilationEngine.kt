@@ -108,6 +108,7 @@ class CompilationEngine {
             when (typeString) {
                 "text" -> type = EQuestionTypes.TEXT
                 "img" -> type = EQuestionTypes.IMAGE
+                "lineup" -> type = EQuestionTypes.LINEUP
             }
             advanceToken()
 

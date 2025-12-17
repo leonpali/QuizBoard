@@ -16,9 +16,15 @@ class QuestionController(private val questionService: QuestionService) {
         model.addAttribute("question", question)
         model.addAttribute("boardId", id)
 
+        if (question.type == EQuestionTypes.LINEUP) {
+            val lineUp = question.text?.split(",")?.toList()
+            model.addAttribute("lineUp", lineUp)
+        }
+
         return when (question.type) {
             EQuestionTypes.TEXT -> "textQuestion"
             EQuestionTypes.IMAGE -> "imageQuestion"
+            EQuestionTypes.LINEUP -> "lineupQuestion"
         }
     }
 }
