@@ -32,9 +32,11 @@
 }
 
 .hidden {
+    font-size: 2em;
     visibility: hidden;
 }
 
 .visible {
+    font-size: 2em;
     visibility: visible;
 }
