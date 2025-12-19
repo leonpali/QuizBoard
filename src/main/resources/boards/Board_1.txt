@@ -1,0 +1,342 @@
+category_1:
+    name: Julian Lyrics
+    questions:
+        question_1:
+            type: text
+            text: Wie du mich in Einzelteile zerlegt hast Als du deine Zähne in mich versenkt hast, oh Blutsauger, Ruhmsüchtiger Mich ausbluten lassen wie ein verdammter Vampir
+            img: null
+            points: 100
+            answer:
+                type: text
+                text: Vampire - Olivia Rodrigo
+                img: null
+        question_2:
+            type: text
+            text: Als ich ein kleiner Junge war, nahm mich mein Vater mit in die Stadt, um eine Blaskapelle anzusehen. Er sagte: „Sohn, wenn du groß bist, wirst du dann der Retter der Gebrochenen sein, der Geschlagenen und Verdammten?“
+            img: null
+            points: 200
+            answer:
+                type: text
+                text: Welcome to the Black Parade - My Chemical Romance
+                img: null
+        question_3:
+            type: text
+            text: Deine Zeitvertreibe bestanden aus dem Seltsamen Und Verdrehten und Wahnsinnigen Und ich liebe dieses kleine Spiel, das du nanntest „Blitzweinen“
+            img: null
+            points: 300
+            answer:
+                type: text
+                text: Crying Lightning - Arctic Monkeys
+                img: null
+        question_4:
+            type: text
+            text: Ich hab's nie zum Weisen gebracht. Ich konnte nicht mal als armer Dieb überleben. Und so erinnerst du mich daran. So erinnerst du mich daran.
+            img: null
+            points: 400
+            answer:
+                type: text
+                text: How You Remind Me - Nickelback
+                img: null
+        question_5:
+            type: text
+            text: Oh mein Gott, was sehe ich da auf dem Parkplatz? Tolle Kurven! Super Form! Schöner Rahmen! Ich will diese beeindruckende Schönheit unbedingt fahren!
+            img: null
+            points: 500
+            answer:
+                type: text
+                text: MC Thunder - Electric Callboy
+                img: null
+        question_6:
+            type: text
+            text: Wenn du dich heute Abend von mir verabschieden würdest, gäbe es immer noch Musik zu schreiben. Was könnte ich sonst tun? Du inspirierst mich so sehr. Das ist mir schon ewig nicht mehr passiert.
+            img: null
+            points: 600
+            answer:
+                type: text
+                text: The Longest Time - Billy Joel
+                img: null
+category_2:
+    name: Das gibts wirklich?
+    questions:
+        question_1:
+            type: text
+            text: Kinder zwingen lokale Tierwelt in Sklaverei um einen Tier Kampfverein zu betreiben.
+            img: null
+            points: 100
+            answer:
+                type: text
+                text: Pokemon
+                img: null
+        question_2:
+            type: text
+            text: Ein kleiner Junge, dem all sein Hab und Gut gestohlen wurde, muss auf den Mond um mit anderen Kindern verstecken zu spielen, da die Menschheit sonst stirbt.
+            img: null
+            points: 200
+            answer:
+                type: text
+                text: The Legend of Zelda: Majora's Mask
+                img: null
+        question_3:
+            type: text
+            text: Klempner sammelt Sterne, damit er Kuchen essen kann und wirft dafür eine große Schildkröte von einer großen Plattform.
+            img: null
+            points: 300
+            answer:
+                type: text
+                text: Mario 64
+                img: null
+        question_4:
+            type: text
+            text: Du musst entweder einem freundlichen Apfelgeist oder einem kapitalistischen Supermarkt helfen ein großes Gebäude zu reparieren.
+            img: null
+            points: 400
+            answer:
+                type: text
+                text: Stardew Valley
+                img: null
+        question_5:
+            type: text
+            text: Zwei Roboter streiten sich darum, wer von ihnen eine Frau in ihrem Labor quälen darf.
+            img: null
+            points: 500
+            answer:
+                type: text
+                text: Portal 2
+                img: null
+        question_6:
+            type: text
+            text: Du fällst in ein Loch und entscheidest ob die Welt Liebe lernt oder alles stirbt.
+            img: null
+            points: 600
+            answer:
+                type: text
+                text: Undertale
+                img: null
+category_3:
+    name: Sitcoms
+    questions:
+        question_1:
+            type: text
+            text: Wer ist Kelly? (B99)
+            img:
+            points: 100
+            answer:
+                type: text
+                text: Scully's Hund und Ehefrau
+                img: null
+        question_2:
+            type: text
+            text: Mit wie vielen Frauen hat Barney nach eigener Aussage geschlafen? (+/- 10%) (HIMYM)
+            img:
+            points: 200
+            answer:
+                type: text
+                text: 255 - 283 - 311
+                img: null
+        question_3:
+            type: text
+            text: Was ist Captain Latvia's Superkraft? (B99)
+            img:
+            points: 300
+            answer:
+                type: text
+                text: Er kann mit Opossums reden
+                img: null
+        question_4:
+            type: text
+            text: Wie heißt die Band von Howard und Raj? (TBBT)
+            img:
+            points: 400
+            answer:
+                type: text
+                text: Footprints on the Moon
+                img: null
+        question_5:
+            type: text
+            text: Wie heißt Robin mit vollem Namen? (HIMYM)
+            img:
+            points: 500
+            answer:
+                type: text
+                text: Robin Charles Scherbatsky
+                img: null
+        question_6:
+            type: text
+            text: Was ist Sheldons Lieblingszahl? (TBBT)
+            img:
+            points: 600
+            answer:
+                type: text
+                text: 73
+                img: null
+category_4:
+    name: 7ineup
+    questions:
+        question_1:
+            type: lineup
+            text: Philipp,Philip,Fabian,Leon,Jakob,Anton,Gabi
+            img: null
+            points: 100
+            answer:
+                type: text
+                text: Personen in der Aachen Abfahrt WhatsApp Gruppe
+                img: null
+        question_2:
+            type: lineup
+            text: Caitlyn,Viktor,Katarina,Leona,Olaf,Nunu & Willump,Aatrox
+            img: null
+            points: 200
+            answer:
+                type: text
+                text: LoL Champs
+                img: null
+        question_3:
+            type: lineup
+            text: Hierokles,Diogenes,Protagoras,Epiktet,Platon,Aristoteles,Sokrates
+            img: null
+            points: 300
+            answer:
+                type: text
+                text: Antike Philosophen
+                img: null
+        question_4:
+            type: lineup
+            text: Urian,Deixel,Vokativus,Nobiswirt,Mephistopheles,Beelzebub,Luzifer
+            img: null
+            points: 400
+            answer:
+                type: text
+                text: Der Teufel
+                img: null
+        question_5:
+            type: lineup
+            text: Bubblegum,Doran,Faust,Carmel,Dalton,Cavendish,Luffy
+            img: null
+            points: 500
+            answer:
+                type: text
+                text: One Piece Charaktere
+                img: null
+        question_6:
+            type: lineup
+            text: 1096,1147,1189,1202,1217,1248,1270
+            img: null
+            points: 600
+            answer:
+                type: text
+                text: Jahre in denen ein Kreuzzug begann
+                img: null
+category_5:
+    name: Fun with Flags
+    questions:
+        question_1:
+            type: img
+            text:
+            img: island.svg
+            points: 100
+            answer:
+                type: text
+                text: Island
+                img: null
+        question_2:
+            type: img
+            text:
+            img: estland.png
+            points: 200
+            answer:
+                type: text
+                text: Estland
+                img:
+        question_3:
+            type: img
+            text:
+            img: bayern.jpg
+            points: 300
+            answer:
+                type: text
+                text: Bayern
+                img: null
+        question_4:
+            type: img
+            text:
+            img: indonesien.png
+            points: 400
+            answer:
+                type: text
+                text: Indonesien
+                img: null
+        question_5:
+            type: img
+            text:
+            img: kosovo.webp
+            points: 500
+            answer:
+                type: text
+                text: Kosovo
+                img: null
+        question_6:
+            type: img
+            text:
+            img: vatikan.svg
+            points: 600
+            answer:
+                type: text
+                text: Vatikanstadt
+                img: null
+category_6:
+    name: Schätzen
+    questions:
+        question_1:
+            type: text
+            text: Wie viel der weltweiten Währung ist digital?
+            img: null
+            points: 400
+            answer:
+                type: text
+                text: ca. 92%
+                img: null
+        question_2:
+            type: text
+            text: Wie weit ist die Erde von der Sonne entfernt?
+            img: null
+            points: 400
+            answer:
+                type: text
+                text: ca. 149,6 Millionen km
+                img: null
+        question_3:
+            type: text
+            text: Wie weit ist man am Point Nemo von Zivilisation entfernt?
+            img: null
+            points: 400
+            answer:
+                type: text
+                text: ca. 2440 km
+                img: null
+        question_4:
+            type: text
+            text: Wie viele Dislikes hatte Youtube Rewind 2018?
+            img: null
+            points: 400
+            answer:
+                type: text
+                text: ca. 20,36 Millionen (86,63%)
+                img: null
+        question_5:
+            type: text
+            text: Wie viele Floating Point Operations schafft die RTX 5090 pro Sekunde?
+            img: null
+            points: 400
+            answer:
+                type: text
+                text: 104,8 Tera Floating Point Operations / Sekunde
+                img: null
+        question_6:
+            type: text
+            text: Wie viel Umsatz hat die 1. Bundesliga in der Saison 23/24 gemacht?
+            img: null
+            points: 400
+            answer:
+                type: text
+                text: ca. 4,8 Milliarden Euro
+                img: null
