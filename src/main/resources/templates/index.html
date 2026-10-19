@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>QuizAbfahrt</title>
+    <link rel="stylesheet" th:href="@{/css/home.css}" />
+</head>
+<body>
+    <main class="home">
+        <h1>QuizAbfahrt</h1>
+
+        <section class="card" th:if="${boardCount > 0}">
+            <h2>Aktuelles Quiz spielen</h2>
+            <div class="board-links">
+                <a class="primary-button"
+                   th:each="i : ${#numbers.sequence(1, boardCount)}"
+                   th:href="@{'/board/' + ${i}}"
+                   th:text="'Board ' + ${i}">Board 1</a>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2>Quiz erstellen</h2>
+
+            <div class="errors" th:if="${errors}">
+                <p th:each="e : ${errors}" th:text="${e}">Fehler</p>
+            </div>
+
+            <form th:action="@{/quiz}" method="post" enctype="multipart/form-data">
+                <label class="field">
+                    <span class="field-title">1. Board-Dateien (.txt)</span>
+                    <span class="field-hint">Eine Datei pro Board, Reihenfolge nach Dateiname (Board_1, Board_2, …)</span>
+                    <input type="file" id="boards" name="boards" accept=".txt,text/plain" multiple required>
+                </label>
+
+                <label class="field">
+                    <span class="field-title">2. Bilder</span>
+                    <span class="field-hint">Alle Bilder, die in den Board-Dateien unter <code>img:</code> verwendet werden</span>
+                    <input type="file" id="images" name="images" accept="image/*" multiple>
+                </label>
+
+                <div id="required-images" class="required-images" hidden>
+                    <p id="required-summary" class="field-title"></p>
+                    <ul id="required-list"></ul>
+                </div>
+
+                <button type="submit" class="primary-button">Quiz erstellen &amp; starten</button>
+            </form>
+        </section>
+    </main>
+
+    <script th:inline="javascript">
+        const bundledImages = new Set(/*[[${bundledImages}]]*/ []);
+        const boardInput = document.getElementById('boards');
+        const imageInput = document.getElementById('images');
+        const box = document.getElementById('required-images');
+        const summary = document.getElementById('required-summary');
+        const list = document.getElementById('required-list');
+
+        async function updateRequiredImages() {
+            const required = new Set();
+            for (const file of boardInput.files) {
+                for (const line of (await file.text()).split(/\r?\n/)) {
+                    const match = line.trim().match(/^img:(.*)$/);
+                    const name = match ? match[1].trim() : '';
+                    if (name && name !== 'null') required.add(name.normalize('NFC'));
+                }
+            }
+            const selected = new Set([...imageInput.files].map(f => f.name.normalize('NFC')));
+
+            list.replaceChildren();
+            let missing = 0;
+            for (const name of [...required].sort()) {
+                const li = document.createElement('li');
+                let status;
+                if (selected.has(name)) {
+                    status = 'ausgewählt';
+                    li.className = 'ok';
+                } else if (bundledImages.has(name)) {
+                    status = 'bereits vorhanden';
+                    li.className = 'ok';
+                } else {
+                    status = 'fehlt';
+                    li.className = 'missing';
+                    missing++;
+                }
+                li.textContent = name + ' – ' + status;
+                list.appendChild(li);
+            }
+
+            box.hidden = required.size === 0;
+            summary.textContent = missing === 0
+                ? `Alle ${required.size} benötigten Bilder sind verfügbar.`
+                : `${missing} von ${required.size} benötigten Bildern fehlen noch:`;
+        }
+
+        boardInput.addEventListener('change', updateRequiredImages);
+        imageInput.addEventListener('change', updateRequiredImages);
+    </script>
+</body>
+</html>
