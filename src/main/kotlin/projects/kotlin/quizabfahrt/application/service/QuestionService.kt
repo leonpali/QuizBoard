@@ -1,14 +1,13 @@
 package projects.kotlin.quizabfahrt.application.service
 
 import org.springframework.stereotype.Service
-import projects.kotlin.quizabfahrt.application.service.parser.CompilationEngine
 import projects.kotlin.quizabfahrt.model.Question
 
 @Service
-class QuestionService {
+class QuestionService(private val quizStore: QuizStore) {
 
     fun changeAskedStatus(boardId: Int, questionId: Int) {
-        CompilationEngine
+        quizStore
             .getBoard(boardId)
             .categories[calculateCategoryIndex(questionId)]
             .questions[calculateQuestionIndex(questionId)]
@@ -16,7 +15,7 @@ class QuestionService {
     }
 
     fun getQuestion(boardId: Int, questionId: Int): Question {
-        return CompilationEngine
+        return quizStore
             .getBoard(boardId)
             .categories[calculateCategoryIndex(questionId)]
             .questions[calculateQuestionIndex(questionId)]

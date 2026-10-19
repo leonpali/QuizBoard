@@ -6,15 +6,15 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import projects.kotlin.quizabfahrt.application.service.QuestionService
-import projects.kotlin.quizabfahrt.application.service.parser.CompilationEngine
+import projects.kotlin.quizabfahrt.application.service.QuizStore
 
 @Controller
-class BoardController(private val questionService: QuestionService) {
+class BoardController(private val questionService: QuestionService, private val quizStore: QuizStore) {
 
     @GetMapping("/board/{id}")
     fun board(model: Model, @PathVariable id: Int): String {
 
-        val categories = CompilationEngine.getBoard(id-1).categories
+        val categories = quizStore.getBoard(id-1).categories
 
         model.addAttribute("categories", categories)
         model.addAttribute("id", id-1)
