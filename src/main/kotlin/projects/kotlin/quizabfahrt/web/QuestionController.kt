@@ -24,7 +24,7 @@ class QuestionController(private val questionService: QuestionService) {
         return when (question.type) {
             EQuestionTypes.TEXT -> "textQuestion"
             EQuestionTypes.IMAGE -> "imageQuestion"
-            EQuestionTypes.LINEUP -> "lineupQuestion"
+            EQuestionTypes.LINEUP -> "lineUpQuestion"
         }
     }
 }
