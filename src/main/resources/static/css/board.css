@@ -44,3 +44,10 @@
 .category {
     font-size: xx-large;
 }
+.home-link {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    color: #777777;
+    text-decoration: none;
+}
