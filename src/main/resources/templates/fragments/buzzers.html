@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<body>
+    <aside th:fragment="panel" id="buzz-panel" class="buzz-panel" hidden>
+        <link rel="stylesheet" th:href="@{/css/buzz.css}">
+        <p id="buzz-status" class="buzz-status"></p>
+        <ol id="buzz-list" class="buzz-list"></ol>
+        <script>
+            (() => {
+                const panel = document.getElementById('buzz-panel');
+                const status = document.getElementById('buzz-status');
+                const list = document.getElementById('buzz-list');
+                const events = new EventSource('/host/events');
+
+                events.addEventListener('state', e => {
+                    const state = JSON.parse(e.data);
+                    panel.hidden = state.players.length === 0;
+                    status.textContent = state.buzzingOpen ? 'Buzzer offen' : 'Buzzer geschlossen';
+                    status.classList.toggle('open', state.buzzingOpen);
+                    list.replaceChildren(...state.buzzes.map(name => {
+                        const li = document.createElement('li');
+                        li.textContent = name;
+                        return li;
+                    }));
+                });
+                events.addEventListener('ended', () => location.href = '/');
+            })();
+        </script>
+    </aside>
+</body>
+</html>
