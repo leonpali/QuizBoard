@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Lobby</title>
+    <link rel="stylesheet" th:href="@{/css/home.css}" />
+</head>
+<body>
+    <main class="home lobby">
+        <section class="card join-info">
+            <p>Beitreten auf <strong th:text="${joinUrl}">https://example.com/join</strong> mit dem Code</p>
+            <p class="join-code" th:text="${code}">123456</p>
+        </section>
+
+        <section class="card">
+            <h2>Teilnehmer (<span id="player-count" th:text="${#lists.size(players)}">0</span>)</h2>
+            <ul id="players" class="player-list">
+                <li th:each="p : ${players}" th:text="${p}">Name</li>
+            </ul>
+            <p id="no-players" class="field-hint" th:hidden="${!#lists.isEmpty(players)}">Noch niemand beigetreten.</p>
+        </section>
+
+        <section class="card">
+            <h2>Spielen</h2>
+            <div class="board-links">
+                <a class="primary-button"
+                   th:each="i : ${#numbers.sequence(1, boardCount)}"
+                   th:href="@{'/board/' + ${i}}"
+                   th:text="'Board ' + ${i}">Board 1</a>
+            </div>
+        </section>
+
+        <form th:action="@{/host/end}" method="post"
+              onsubmit="return confirm('Quiz wirklich beenden? Alle Teilnehmer werden entfernt.')">
+            <button type="submit" class="secondary-button">Quiz beenden</button>
+        </form>
+    </main>
+
+    <script>
+        const events = new EventSource('/host/events');
+        events.addEventListener('state', e => {
+            const state = JSON.parse(e.data);
+            const list = document.getElementById('players');
+            list.replaceChildren(...state.players.map(name => {
+                const li = document.createElement('li');
+                li.textContent = name;
+                return li;
+            }));
+            document.getElementById('player-count').textContent = state.players.length;
+            document.getElementById('no-players').hidden = state.players.length > 0;
+        });
+        events.addEventListener('ended', () => location.href = '/');
+    </script>
+</body>
+</html>

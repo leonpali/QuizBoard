@@ -3,24 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <title>QuizAbfahrt</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" th:href="@{/css/home.css}" />
 </head>
 <body>
     <main class="home">
         <h1>QuizAbfahrt</h1>
 
-        <section class="card" th:if="${boardCount > 0}">
-            <h2>Aktuelles Quiz spielen</h2>
-            <div class="board-links">
-                <a class="primary-button"
-                   th:each="i : ${#numbers.sequence(1, boardCount)}"
-                   th:href="@{'/board/' + ${i}}"
-                   th:text="'Board ' + ${i}">Board 1</a>
-            </div>
+        <section class="card" th:if="${hostedCode}">
+            <h2>Dein laufendes Quiz</h2>
+            <p>Code <strong th:text="${hostedCode}">123456</strong></p>
+            <a class="primary-button" th:href="@{/host}">Zur Lobby</a>
+        </section>
+
+        <section class="card">
+            <h2>Quiz beitreten</h2>
+            <p th:if="${joinedCode}">
+                Du bist im Quiz <strong th:text="${joinedCode}">123456</strong>.
+            </p>
+            <a class="primary-button" th:href="@{/join}"
+               th:text="${joinedCode} ? 'Zurück zum Buzzer' : 'Mit Code beitreten'">Mit Code beitreten</a>
         </section>
 
         <section class="card">
             <h2>Quiz erstellen</h2>
+            <p class="field-hint" th:if="${hostedCode}">Ein neues Quiz beendet dein laufendes Quiz.</p>
 
             <div class="errors" th:if="${errors}">
                 <p th:each="e : ${errors}" th:text="${e}">Fehler</p>
