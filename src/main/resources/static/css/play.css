@@ -1,0 +1,70 @@
+html, body {
+    margin: 0;
+    height: 100%;
+    font-family: sans-serif;
+    background: #1e1e1e;
+    color: white;
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.play {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 30px;
+    padding: 16px;
+    box-sizing: border-box;
+}
+
+.play-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 16px;
+    color: #aaaaaa;
+}
+
+.buzzer {
+    width: min(75vw, 60vh);
+    height: min(75vw, 60vh);
+    border-radius: 50%;
+    border: none;
+    font-size: min(15vw, 12vh);
+    font-weight: bold;
+    background: #555555;
+    color: #999999;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.buzzer.open {
+    background: #a714d9;
+    color: black;
+    cursor: pointer;
+    box-shadow: 0 0 40px #ca49f5;
+}
+
+.buzzer.open:active {
+    transform: scale(0.96);
+}
+
+.buzzer.buzzed {
+    background: #1a8f1a;
+    color: white;
+}
+
+.status {
+    font-size: 1.3em;
+    text-align: center;
+    min-height: 1.5em;
+}
+
+.status a {
+    color: #ca49f5;
+}

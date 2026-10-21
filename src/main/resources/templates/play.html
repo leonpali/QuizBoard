@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>Buzzer</title>
+    <link rel="stylesheet" th:href="@{/css/play.css}" />
+</head>
+<body>
+    <main class="play">
+        <header class="play-header">
+            <span th:text="${name}">Name</span>
+            <span>Quiz <span th:text="${code}">123456</span></span>
+        </header>
+
+        <button id="buzzer" class="buzzer" disabled>…</button>
+        <p id="status" class="status">Verbinde…</p>
+    </main>
+
+    <script>
+        const buzzer = document.getElementById('buzzer');
+        const status = document.getElementById('status');
+
+        function render(state) {
+            if (state.buzzed) {
+                buzzer.disabled = true;
+                buzzer.className = 'buzzer buzzed';
+                buzzer.textContent = state.position;
+                status.textContent = 'Gebuzzert! Du warst Nr. ' + state.position + '.';
+            } else if (state.buzzingOpen) {
+                buzzer.disabled = false;
+                buzzer.className = 'buzzer open';
+                buzzer.textContent = 'BUZZ';
+                status.textContent = 'Frage läuft – schnell sein!';
+            } else {
+                buzzer.disabled = true;
+                buzzer.className = 'buzzer';
+                buzzer.textContent = '…';
+                status.textContent = 'Warte auf die nächste Frage';
+            }
+        }
+
+        function ended(message) {
+            buzzer.disabled = true;
+            buzzer.className = 'buzzer';
+            buzzer.textContent = '–';
+            status.innerHTML = '';
+            status.append(message + ' ');
+            const link = document.createElement('a');
+            link.href = '/join';
+            link.textContent = 'Neu beitreten';
+            status.append(link);
+        }
+
+        const events = new EventSource('/play/events');
+        events.addEventListener('state', e => render(JSON.parse(e.data)));
+        events.addEventListener('ended', () => {
+            events.close();
+            ended('Das Quiz wurde beendet.');
+        });
+        events.onerror = () => {
+            if (events.readyState === EventSource.CLOSED) ended('Das Quiz ist nicht mehr verfügbar.');
+            else status.textContent = 'Verbindung unterbrochen, verbinde neu…';
+        };
+
+        buzzer.addEventListener('click', async () => {
+            buzzer.disabled = true;
+            const response = await fetch('/play/buzz', { method: 'POST' });
+            if (!response.ok) {
+                ended('Das Quiz ist nicht mehr verfügbar.');
+                return;
+            }
+            const state = await response.json();
+            if (state.buzzed && navigator.vibrate) navigator.vibrate(150);
+            render(state);
+        });
+    </script>
+</body>
+</html>

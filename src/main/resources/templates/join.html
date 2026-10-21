@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Quiz beitreten</title>
+    <link rel="stylesheet" th:href="@{/css/home.css}" />
+</head>
+<body>
+    <main class="home">
+        <h1>QuizAbfahrt</h1>
+
+        <section class="card">
+            <h2>Quiz beitreten</h2>
+
+            <div class="errors" th:if="${error}">
+                <p th:text="${error}">Fehler</p>
+            </div>
+
+            <form th:action="@{/join}" method="post">
+                <label class="field">
+                    <span class="field-title">Code</span>
+                    <input class="text-input code-input" type="text" name="code" th:value="${code}"
+                           inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="off"
+                           placeholder="123456" required>
+                </label>
+
+                <label class="field">
+                    <span class="field-title">Dein Name</span>
+                    <input class="text-input" type="text" name="name" th:value="${name}"
+                           th:maxlength="${maxNameLength}" autocomplete="nickname" required>
+                </label>
+
+                <button type="submit" class="primary-button">Beitreten</button>
+            </form>
+        </section>
+    </main>
+</body>
+</html>
