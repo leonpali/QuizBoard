@@ -10,6 +10,7 @@
     <main class="play">
         <header class="play-header">
             <span th:text="${name}">Name</span>
+            <span id="score" class="score"></span>
             <span>Quiz <span th:text="${code}">123456</span></span>
         </header>
 
@@ -20,8 +21,10 @@
     <script>
         const buzzer = document.getElementById('buzzer');
         const status = document.getElementById('status');
+        const score = document.getElementById('score');
 
         function render(state) {
+            score.textContent = state.score + ' Punkte';
             if (state.buzzed) {
                 buzzer.disabled = true;
                 buzzer.className = 'buzzer buzzed';

@@ -106,7 +106,7 @@ class QuizSessionService(
             if (session.players.size >= maxPlayers) {
                 throw QuizSessionException("Das Quiz ist voll.")
             }
-            Player(newToken(), trimmedName).also { session.players[it.token] = it }
+            Player(session.nextPlayerId++, newToken(), trimmedName).also { session.players[it.token] = it }
         }
         events.publishEvent(SessionChangedEvent(session))
         return session to player
@@ -140,19 +140,51 @@ class QuizSessionService(
         return playerState(session, player)
     }
 
+    fun toggleResult(session: QuizSession, boardIndex: Int, questionId: Int, playerId: Int, outcome: Outcome, points: Int) {
+        synchronized(session) {
+            if (session.players.values.none { it.id == playerId }) throw QuizSessionException("Unbekannter Teilnehmer.")
+            val results = session.results.getOrPut(QuizSession.questionKey(boardIndex, questionId)) { HashMap() }
+            if (results[playerId]?.outcome == outcome) {
+                results.remove(playerId)
+            } else {
+                val delta = if (outcome == Outcome.CORRECT) points else -points / 2
+                results[playerId] = QuestionResult(outcome, delta)
+            }
+        }
+        events.publishEvent(SessionChangedEvent(session))
+    }
+
+    fun scoringRows(session: QuizSession, boardIndex: Int, questionId: Int): List<ScoringRow> = synchronized(session) {
+        val key = QuizSession.questionKey(boardIndex, questionId)
+        val buzzOrder = session.buzzes[key].orEmpty()
+        val results = session.results[key].orEmpty()
+        (buzzOrder + session.players.values.filter { it !in buzzOrder }).map { player ->
+            ScoringRow(
+                playerId = player.id,
+                name = player.name,
+                buzzPosition = buzzOrder.indexOf(player).takeIf { it >= 0 }?.plus(1),
+                outcome = results[player.id]?.outcome,
+                score = session.getScore(player),
+            )
+        }
+    }
+
     fun hostState(session: QuizSession): HostState = synchronized(session) {
         HostState(
             code = session.code,
-            players = session.players.values.map { it.name },
+            players = session.players.values
+                .map { PlayerScore(it.name, session.getScore(it)) }
+                .sortedByDescending { it.score },
             buzzingOpen = session.buzzingOpen,
-            buzzes = currentBuzzes(session).map { it.name },
+            buzzes = session.getCurrentBuzzes().map { it.name },
         )
     }
 
     fun playerState(session: QuizSession, player: Player): PlayerState = synchronized(session) {
-        val position = currentBuzzes(session).indexOf(player)
+        val position = session.getCurrentBuzzes().indexOf(player)
         PlayerState(
             name = player.name,
+            score = session.getScore(player),
             buzzingOpen = session.buzzingOpen,
             buzzed = position >= 0,
             position = if (position >= 0) position + 1 else null,
@@ -174,9 +206,6 @@ class QuizSessionService(
         failedJoins.values.forEach { attempts -> synchronized(attempts) { attempts.removeIf { it.isBefore(now - FAILED_JOIN_WINDOW) } } }
         failedJoins.entries.removeIf { synchronized(it.value) { it.value.isEmpty() } }
     }
-
-    private fun currentBuzzes(session: QuizSession): List<Player> =
-        session.currentQuestion?.let { session.buzzes[it] }.orEmpty()
 
     private fun isThrottled(ip: String): Boolean {
         val attempts = failedJoins[ip] ?: return false

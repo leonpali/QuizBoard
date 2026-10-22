@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Punkte vergeben</title>
+    <link rel="stylesheet" th:href="@{/css/score.css}">
+</head>
+<body>
+    <main class="score-page">
+        <h1>Punkte vergeben <span class="worth" th:text="${question.points} + ' Punkte'">300 Punkte</span></h1>
+
+        <table class="score-table">
+            <thead>
+                <tr>
+                    <th>Buzz</th>
+                    <th>Name</th>
+                    <th>Stand</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="row : ${rows}">
+                    <td class="buzz-position" th:text="${row.buzzPosition} ? ${row.buzzPosition} + '.' : ''">1.</td>
+                    <td class="name" th:text="${row.name}">Name</td>
+                    <td class="total" th:text="${row.score}">0</td>
+                    <td class="actions">
+                        <form th:action="@{'/board/' + ${boardId} + '/question/' + ${question.id} + '/score'}" method="post">
+                            <input type="hidden" name="playerId" th:value="${row.playerId}">
+                            <button class="result-button correct" name="outcome" value="CORRECT"
+                                    th:classappend="${row.outcome != null and row.outcome.name() == 'CORRECT'} ? 'active' : ''"
+                                    th:text="'✔ +' + ${question.points}">✔ +300</button>
+                            <button class="result-button wrong" name="outcome" value="WRONG"
+                                    th:classappend="${row.outcome != null and row.outcome.name() == 'WRONG'} ? 'active' : ''"
+                                    th:text="'✘ −' + ${penalty}">✘ −150</button>
+                        </form>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <form th:action="@{'/board/' + ${boardId}}" method="get">
+            <button class="continue-button">Weiter</button>
+        </form>
+    </main>
+</body>
+</html>

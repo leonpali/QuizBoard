@@ -31,6 +31,11 @@ html, body {
     color: #aaaaaa;
 }
 
+.score {
+    color: white;
+    font-weight: bold;
+}
+
 .buzzer {
     width: min(75vw, 60vh);
     height: min(75vw, 60vh);

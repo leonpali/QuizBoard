@@ -25,6 +25,11 @@ class AnswerController(private val questionService: QuestionService, private val
 
         model.addAttribute("boardId", id)
         model.addAttribute("question", question)
+        model.addAttribute(
+            "nextUrl",
+            if (sessions.hostState(session).players.isEmpty()) "/board/$id"
+            else "/board/$id/question/$questionId/score",
+        )
 
         return when (question.answer.type) {
             EAnswerTypes.TEXT -> "textAnswer"

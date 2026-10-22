@@ -1,0 +1,92 @@
+body {
+    margin: 0;
+    font-family: sans-serif;
+}
+
+.score-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 30px 16px;
+}
+
+h1 {
+    font-size: 2.5em;
+}
+
+.worth {
+    margin-left: 15px;
+    color: #a714d9;
+}
+
+.score-table {
+    width: min(1100px, 90vw);
+    border-collapse: collapse;
+    font-size: 1.6em;
+}
+
+.score-table th {
+    text-align: left;
+    color: #777777;
+    font-size: 0.7em;
+    padding-bottom: 10px;
+}
+
+.score-table td {
+    padding: 8px 10px;
+    border-top: 1px solid #dddddd;
+}
+
+.buzz-position {
+    width: 3em;
+    font-weight: bold;
+    color: #a714d9;
+}
+
+.total {
+    width: 4em;
+    font-weight: bold;
+}
+
+.actions form {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin: 0;
+}
+
+.result-button {
+    font-size: 0.8em;
+    padding: 8px 16px;
+    border-radius: 10px;
+    border: 2px solid;
+    background: white;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.result-button.correct {
+    border-color: #1a8f1a;
+    color: #1a8f1a;
+}
+
+.result-button.wrong {
+    border-color: #c62828;
+    color: #c62828;
+}
+
+.result-button.correct.active {
+    background: #1a8f1a;
+    color: white;
+}
+
+.result-button.wrong.active {
+    background: #c62828;
+    color: white;
+}
+
+.continue-button {
+    margin-top: 30px;
+    font-size: 2em;
+    padding: 10px 20px;
+}

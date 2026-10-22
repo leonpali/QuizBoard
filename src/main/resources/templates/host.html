@@ -16,7 +16,10 @@
         <section class="card">
             <h2>Teilnehmer (<span id="player-count" th:text="${#lists.size(players)}">0</span>)</h2>
             <ul id="players" class="player-list">
-                <li th:each="p : ${players}" th:text="${p}">Name</li>
+                <li th:each="p : ${players}">
+                    <span th:text="${p.name}">Name</span>
+                    <strong class="player-score" th:text="${p.score}">0</strong>
+                </li>
             </ul>
             <p id="no-players" class="field-hint" th:hidden="${!#lists.isEmpty(players)}">Noch niemand beigetreten.</p>
         </section>
@@ -42,9 +45,14 @@
         events.addEventListener('state', e => {
             const state = JSON.parse(e.data);
             const list = document.getElementById('players');
-            list.replaceChildren(...state.players.map(name => {
+            list.replaceChildren(...state.players.map(player => {
                 const li = document.createElement('li');
-                li.textContent = name;
+                const name = document.createElement('span');
+                name.textContent = player.name;
+                const score = document.createElement('strong');
+                score.className = 'player-score';
+                score.textContent = player.score;
+                li.append(name, ' ', score);
                 return li;
             }));
             document.getElementById('player-count').textContent = state.players.length;

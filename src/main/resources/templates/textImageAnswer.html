@@ -10,7 +10,7 @@
         <div class="answer-block">
             <img class="answer-image" th:src="@{'/images/' + ${question.getAnswerImage()}}" alt="">
             <p class="answer" th:text="${question.getAnswerText()}"></p>
-            <form th:action="@{'/board/' + ${boardId}}" method="get">
+            <form th:action="@{${nextUrl}}" method="get">
                 <button class="continue-button">Weiter</button>
             </form>
         </div>

@@ -55,7 +55,7 @@ class QuizSessionServiceTest {
 
         assertEquals("Anna", anna.name)
         assertSame(anna, again)
-        assertEquals(listOf("Anna"), service.hostState(session).players)
+        assertEquals(listOf(PlayerScore("Anna", 0)), service.hostState(session).players)
     }
 
     @Test
@@ -126,5 +126,67 @@ class QuizSessionServiceTest {
     fun `codes are unique across sessions`() {
         val other = service.create(emptyList(), null) {}
         assertNotEquals(session.code, other.code)
+    }
+
+    @Test
+    fun `correct answers add the points, wrong answers deduct half`() {
+        val (_, anna) = service.join(session.code, "Anna", "1.1.1.1", null)
+        val (_, ben) = service.join(session.code, "Ben", "1.1.1.1", null)
+
+        service.toggleResult(session, 0, 0, anna.id, Outcome.WRONG, 300)
+        service.toggleResult(session, 0, 0, ben.id, Outcome.CORRECT, 300)
+        service.toggleResult(session, 0, 1, anna.id, Outcome.CORRECT, 500)
+
+        assertEquals(350, service.playerState(session, anna).score)
+        assertEquals(300, service.playerState(session, ben).score)
+        assertEquals(listOf(PlayerScore("Anna", 350), PlayerScore("Ben", 300)), service.hostState(session).players)
+    }
+
+    @Test
+    fun `several participants can get points for the same question`() {
+        val (_, anna) = service.join(session.code, "Anna", "1.1.1.1", null)
+        val (_, ben) = service.join(session.code, "Ben", "1.1.1.1", null)
+
+        service.toggleResult(session, 0, 0, anna.id, Outcome.CORRECT, 200)
+        service.toggleResult(session, 0, 0, ben.id, Outcome.CORRECT, 200)
+
+        assertEquals(200, service.playerState(session, anna).score)
+        assertEquals(200, service.playerState(session, ben).score)
+    }
+
+    @Test
+    fun `choosing the same outcome again removes it, choosing the other one replaces it`() {
+        val (_, anna) = service.join(session.code, "Anna", "1.1.1.1", null)
+
+        service.toggleResult(session, 0, 0, anna.id, Outcome.CORRECT, 400)
+        service.toggleResult(session, 0, 0, anna.id, Outcome.WRONG, 400)
+        assertEquals(-200, service.playerState(session, anna).score)
+
+        service.toggleResult(session, 0, 0, anna.id, Outcome.WRONG, 400)
+        assertEquals(0, service.playerState(session, anna).score)
+        assertNull(service.scoringRows(session, 0, 0).single().outcome)
+    }
+
+    @Test
+    fun `scoring rows list buzzers first, in buzz order`() {
+        val (_, anna) = service.join(session.code, "Anna", "1.1.1.1", null)
+        val (_, ben) = service.join(session.code, "Ben", "1.1.1.1", null)
+        val (_, cem) = service.join(session.code, "Cem", "1.1.1.1", null)
+
+        service.openQuestion(session, 0, 2)
+        service.buzz(session, cem)
+        service.buzz(session, ben)
+        service.toggleResult(session, 0, 2, ben.id, Outcome.CORRECT, 100)
+
+        val rows = service.scoringRows(session, 0, 2)
+        assertEquals(listOf("Cem", "Ben", "Anna"), rows.map { it.name })
+        assertEquals(listOf(1, 2, null), rows.map { it.buzzPosition })
+        assertEquals(listOf(null, Outcome.CORRECT, null), rows.map { it.outcome })
+        assertEquals(anna.id, rows.last().playerId)
+    }
+
+    @Test
+    fun `results for unknown participants are rejected`() {
+        assertFailsWith<QuizSessionException> { service.toggleResult(session, 0, 0, 42, Outcome.CORRECT, 100) }
     }
 }

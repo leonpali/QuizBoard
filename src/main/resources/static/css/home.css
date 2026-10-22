@@ -152,3 +152,8 @@ h1 {
     background: #f0d9f8;
     border-radius: 20px;
 }
+
+.player-score {
+    margin-left: 6px;
+    color: #a714d9;
+}
