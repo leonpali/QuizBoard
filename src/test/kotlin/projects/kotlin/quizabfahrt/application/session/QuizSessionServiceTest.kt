@@ -185,6 +185,58 @@ class QuizSessionServiceTest {
         assertEquals(anna.id, rows.last().playerId)
     }
 
+    private fun useQuizWithRoomForTen() {
+        service = QuizSessionService(
+            uploadDir.resolve("large").toString(), Duration.ofHours(24), maxSessions = 2, maxPlayers = 10,
+            events = ApplicationEventPublisher { },
+        )
+        session = service.create(emptyList(), null) {}
+    }
+
+    private fun joinWithScore(name: String, points: Int) {
+        val (_, player) = service.join(session.code, name, "1.1.1.1", null)
+        if (points != 0) service.toggleResult(session, 0, player.id, player.id, Outcome.CORRECT, points)
+    }
+
+    @Test
+    fun `ranking orders by score without ties`() {
+        useQuizWithRoomForTen()
+        joinWithScore("Anna", 100)
+        joinWithScore("Ben", 300)
+        joinWithScore("Cem", 200)
+
+        assertEquals(
+            listOf(RankedPlayer(1, "Ben", 300), RankedPlayer(2, "Cem", 200), RankedPlayer(3, "Anna", 100)),
+            service.ranking(session),
+        )
+    }
+
+    @Test
+    fun `tied participants share a place and the next places are skipped`() {
+        useQuizWithRoomForTen()
+        joinWithScore("Anna", 300)
+        joinWithScore("Ben", 300)
+        joinWithScore("Cem", 200)
+        joinWithScore("Dana", 200)
+        joinWithScore("Emil", 100)
+
+        assertEquals(listOf(1, 1, 3, 3, 5), service.ranking(session).map { it.place })
+    }
+
+    @Test
+    fun `three tied for first leaves out second and third place`() {
+        useQuizWithRoomForTen()
+        joinWithScore("Anna", 500)
+        joinWithScore("Ben", 500)
+        joinWithScore("Cem", 500)
+        joinWithScore("Dana", -50)
+
+        assertEquals(
+            listOf(RankedPlayer(1, "Anna", 500), RankedPlayer(1, "Ben", 500), RankedPlayer(1, "Cem", 500), RankedPlayer(4, "Dana", -50)),
+            service.ranking(session),
+        )
+    }
+
     @Test
     fun `results for unknown participants are rejected`() {
         assertFailsWith<QuizSessionException> { service.toggleResult(session, 0, 0, 42, Outcome.CORRECT, 100) }

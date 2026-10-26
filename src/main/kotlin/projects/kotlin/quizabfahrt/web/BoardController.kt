@@ -22,8 +22,11 @@ class BoardController(private val questionService: QuestionService, private val 
         val categories = questionService.getBoard(session, id-1).categories
         sessions.closeBuzzing(session)
 
+        val isLastBoard = id >= session.boards.size
         model.addAttribute("categories", categories)
         model.addAttribute("id", id-1)
+        model.addAttribute("nextUrl", if (isLastBoard) "/host/scoreboard" else "/board/${id+1}")
+        model.addAttribute("nextLabel", if (isLastBoard) "Zum Endstand" else "Nächstes Board")
         return "board"
     }
 

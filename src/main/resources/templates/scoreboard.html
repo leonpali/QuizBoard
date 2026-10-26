@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Endstand</title>
+    <link rel="stylesheet" th:href="@{/css/scoreboard.css}">
+</head>
+<body>
+    <a class="home-link" th:href="@{/host}">Lobby</a>
+
+    <main class="scoreboard">
+        <h1>Endstand</h1>
+
+        <p class="empty" th:if="${#lists.isEmpty(podium)}">Keine Teilnehmer.</p>
+
+        <div class="podium" th:unless="${#lists.isEmpty(podium)}">
+            <div th:each="step : ${podium}" class="podium-step" th:classappend="'place-' + ${step.place}">
+                <div class="podium-players">
+                    <div th:each="p : ${step.players}" class="podium-player">
+                        <span class="podium-name" th:text="${p.name}">Name</span>
+                        <span class="podium-score" th:text="${p.score} + ' Punkte'">300 Punkte</span>
+                    </div>
+                </div>
+                <div class="podium-block" th:text="${step.place} + '.'">1.</div>
+            </div>
+        </div>
+
+        <ol class="rest" th:unless="${#lists.isEmpty(rest)}">
+            <li th:each="p : ${rest}">
+                <span class="rest-place" th:text="${p.place} + '.'">4.</span>
+                <span class="rest-name" th:text="${p.name}">Name</span>
+                <span class="rest-score" th:text="${p.score}">0</span>
+            </li>
+        </ol>
+    </main>
+</body>
+</html>

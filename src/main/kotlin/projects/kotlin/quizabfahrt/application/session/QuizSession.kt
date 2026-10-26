@@ -35,12 +35,21 @@ class QuizSession(
 
     fun getCurrentBuzzes(): List<Player> = currentQuestion?.let { buzzes[it] }.orEmpty()
 
+    fun getRanking(): List<RankedPlayer> {
+        val sorted = players.values.map { PlayerScore(it.name, getScore(it)) }.sortedByDescending { it.score }
+        return sorted.map { player ->
+            RankedPlayer(sorted.indexOfFirst { it.score == player.score } + 1, player.name, player.score)
+        }
+    }
+
     companion object {
         fun questionKey(boardIndex: Int, questionId: Int) = "$boardIndex:$questionId"
     }
 }
 
 data class PlayerScore(val name: String, val score: Int)
+
+data class RankedPlayer(val place: Int, val name: String, val score: Int)
 
 data class HostState(
     val code: String,

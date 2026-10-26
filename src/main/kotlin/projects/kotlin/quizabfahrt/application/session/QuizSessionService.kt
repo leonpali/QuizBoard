@@ -169,6 +169,8 @@ class QuizSessionService(
         }
     }
 
+    fun ranking(session: QuizSession): List<RankedPlayer> = synchronized(session) { session.getRanking() }
+
     fun hostState(session: QuizSession): HostState = synchronized(session) {
         HostState(
             code = session.code,

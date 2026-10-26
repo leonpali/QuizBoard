@@ -7,6 +7,7 @@
 </head>
 <body>
     <a class="home-link" th:href="@{/host}">Lobby</a>
+    <a class="next-link" th:href="@{${nextUrl}}" th:text="${nextLabel} + ' →'">Nächstes Board →</a>
     <div class="board-div">
         <table class="board">
             <thead>

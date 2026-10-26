@@ -51,3 +51,16 @@
     color: #777777;
     text-decoration: none;
 }
+
+.next-link {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    color: #777777;
+    text-decoration: none;
+}
+
+.next-link:hover,
+.home-link:hover {
+    color: #a714d9;
+}

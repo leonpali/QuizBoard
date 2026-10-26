@@ -31,6 +31,7 @@
                    th:each="i : ${#numbers.sequence(1, boardCount)}"
                    th:href="@{'/board/' + ${i}}"
                    th:text="'Board ' + ${i}">Board 1</a>
+                <a class="primary-button" th:href="@{/host/scoreboard}">Endstand</a>
             </div>
         </section>
 
