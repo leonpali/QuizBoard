@@ -172,6 +172,9 @@ Then delete the local private key file. The deploy job runs in the GitHub enviro
 - The app trusts `X-Forwarded-*` headers from proxies on the same machine or private network, so cookies get the `Secure` flag and the lobby shows the public join link. It only listens on `127.0.0.1`, so it can't be reached around Caddy.
 - Live updates use Server-Sent Events on `/host/events` and `/play/events`. Caddy passes them through without extra configuration. With nginx instead, disable buffering for them (the app also sends `X-Accel-Buffering: no`) and set `proxy_read_timeout` above 30 seconds.
 - Anyone who can reach the server can create a quiz. `quiz.max-sessions` and the upload limits keep this in check, but there is no password for creating quizzes.
+- POST requests from other origins are rejected, including other subdomains of the same domain, so another app on the same server can't send requests to the quiz with a visitor's cookies.
+- Uploaded images must be jpg, png, gif, webp, avif or bmp. Images are served with headers that prevent any script in them from running.
+- Every response carries security headers (`SecurityHeadersFilter`): a Content-Security-Policy that only runs scripts carrying the current request's nonce, plus `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, and HSTS over HTTPS.
 
 ## Project structure
 
@@ -195,3 +198,5 @@ deploy/                     systemd service, Caddyfile, deploy script and sudoer
 ```
 
 Run the tests with `./gradlew test`.
+
+The Content-Security-Policy blocks every script that doesn't carry the request's nonce, including inline event handlers like `onclick="…"`. New `<script>` blocks in templates therefore need `th:attr="nonce=${cspNonce}"`, and event handlers belong in a script via `addEventListener`.

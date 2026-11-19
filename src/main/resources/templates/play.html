@@ -18,7 +18,7 @@
         <p id="status" class="status">Verbinde…</p>
     </main>
 
-    <script>
+    <script th:attr="nonce=${cspNonce}">
         const buzzer = document.getElementById('buzzer');
         const status = document.getElementById('status');
         const score = document.getElementById('score');

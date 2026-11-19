@@ -61,7 +61,7 @@
         </section>
     </main>
 
-    <script th:inline="javascript">
+    <script th:inline="javascript" th:attr="nonce=${cspNonce}">
         const bundledImages = new Set(/*[[${bundledImages}]]*/ []);
         const boardInput = document.getElementById('boards');
         const imageInput = document.getElementById('images');

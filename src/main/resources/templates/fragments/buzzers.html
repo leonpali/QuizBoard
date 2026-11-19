@@ -5,7 +5,7 @@
         <link rel="stylesheet" th:href="@{/css/buzz.css}">
         <p id="buzz-status" class="buzz-status"></p>
         <ol id="buzz-list" class="buzz-list"></ol>
-        <script>
+        <script th:attr="nonce=${cspNonce}">
             (() => {
                 const panel = document.getElementById('buzz-panel');
                 const status = document.getElementById('buzz-status');

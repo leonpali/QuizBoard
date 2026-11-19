@@ -35,13 +35,16 @@
             </div>
         </section>
 
-        <form th:action="@{/host/end}" method="post"
-              onsubmit="return confirm('Quiz wirklich beenden? Alle Teilnehmer werden entfernt.')">
+        <form id="end-form" th:action="@{/host/end}" method="post">
             <button type="submit" class="secondary-button">Quiz beenden</button>
         </form>
     </main>
 
-    <script>
+    <script th:attr="nonce=${cspNonce}">
+        document.getElementById('end-form').addEventListener('submit', e => {
+            if (!confirm('Quiz wirklich beenden? Alle Teilnehmer werden entfernt.')) e.preventDefault();
+        });
+
         const events = new EventSource('/host/events');
         events.addEventListener('state', e => {
             const state = JSON.parse(e.data);
