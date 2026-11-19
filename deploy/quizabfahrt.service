@@ -1,0 +1,25 @@
+[Unit]
+Description=QuizAbfahrt
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=quiz
+Group=quiz
+WorkingDirectory=/opt/quizabfahrt
+ExecStart=/usr/bin/java -Xmx512m -jar /opt/quizabfahrt/quizabfahrt.jar \
+    --server.address=127.0.0.1 \
+    --quiz.upload-dir=/var/lib/quizabfahrt/images
+StateDirectory=quizabfahrt
+Restart=on-failure
+RestartSec=5
+# The JVM exits with 143 when systemd stops it
+SuccessExitStatus=143
+
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
