@@ -44,7 +44,7 @@ class CompilationEngine {
         while (sc!!.hasNextLine()) {
             currentLine++
             val line = sc!!.nextLine().trim()
-            if (line.isNotEmpty()) {
+            if (line.isNotEmpty() && !line.startsWith("#")) {
                 currentToken = line
                 return
             }

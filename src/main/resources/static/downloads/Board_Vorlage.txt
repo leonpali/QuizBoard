@@ -1,0 +1,83 @@
+# QuizAbfahrt – Vorlage für ein Board
+#
+# Eine Datei = ein Board. Mehrere Boards werden nach Dateiname sortiert
+# (Board_1.txt, Board_2.txt, …).
+#
+# Regeln:
+# - Jede Kategorie hat genau 6 Fragen. Die Anzahl der Kategorien ist frei.
+# - Die Felder müssen genau in dieser Reihenfolge stehen.
+# - Einrückung und Leerzeilen sind egal, Zeilen mit # am Anfang werden ignoriert.
+# - Leere Felder: einfach leer lassen oder "null" schreiben.
+# - Bilder: nur den Dateinamen angeben und die Datei beim Erstellen des Quiz mit hochladen.
+#
+# Fragetypen (type unter question):
+#   text    Zeigt den Text der Frage
+#   img     Zeigt das Bild der Frage
+#   lineup  Zeigt die Einträge aus text (mit Komma getrennt) nacheinander per "Aufdecken"
+#
+# Antworttypen (type unter answer):
+#   text       Zeigt den Text der Antwort
+#   img        Zeigt das Bild der Antwort
+#   textimage  Zeigt Bild und Text der Antwort
+#
+# Punkte: richtige Antwort = volle Punkte, falsche Antwort = minus die Hälfte.
+
+category_1:
+    name: Beispielkategorie
+    questions:
+        question_1:
+            type: text
+            text: Wie heißt die Hauptstadt von Frankreich?
+            img: null
+            points: 100
+            answer:
+                type: text
+                text: Paris
+                img: null
+        question_2:
+            type: img
+            text: null
+            img: bild_frage.jpg
+            points: 200
+            answer:
+                type: text
+                text: Was auf dem Bild zu sehen ist
+                img: null
+        question_3:
+            type: text
+            text: Welche Farbe hat der Himmel bei klarem Wetter?
+            img: null
+            points: 300
+            answer:
+                type: img
+                text: null
+                img: bild_antwort.jpg
+        question_4:
+            type: img
+            text: null
+            img: albumcover.png
+            points: 400
+            answer:
+                type: textimage
+                text: Albumname - Band
+                img: albumcover_original.jpg
+        question_5:
+            type: lineup
+            text: Erster Hinweis, Zweiter Hinweis, Dritter Hinweis
+            img: null
+            points: 500
+            answer:
+                type: text
+                text: Lösung
+                img: null
+        question_6:
+            type: text
+            text: Die schwerste Frage der Kategorie
+            img: null
+            points: 600
+            answer:
+                type: text
+                text: Die Antwort
+                img: null
+
+# Weitere Kategorien folgen genauso: category_2:, category_3:, …

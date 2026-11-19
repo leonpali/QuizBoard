@@ -28,6 +28,11 @@
         <section class="card">
             <h2>Quiz erstellen</h2>
             <p class="field-hint" th:if="${hostedCode}">Ein neues Quiz beendet dein laufendes Quiz.</p>
+            <p class="field-hint">
+                Noch keine Board-Datei?
+                <a th:href="@{/downloads/Board_Vorlage.txt}" download>Vorlage herunterladen</a>
+                – sie erklärt das Format und enthält ein Beispiel für jeden Fragetyp.
+            </p>
 
             <div class="errors" th:if="${errors}">
                 <p th:each="e : ${errors}" th:text="${e}">Fehler</p>

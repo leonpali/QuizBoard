@@ -46,7 +46,7 @@ Without any participants, the app still works as a plain projected quiz board: t
 
 ## Board file format
 
-Each file is one board. Every category needs exactly 6 questions; there can be any number of categories. Keys must appear in exactly this order (indentation is optional, blank lines are ignored):
+Each file is one board. Every category needs exactly 6 questions; there can be any number of categories. Keys must appear in exactly this order (indentation is optional, blank lines and lines starting with `#` are ignored). A commented template with an example of every question type can be downloaded from the start page ([`Board_Vorlage.txt`](src/main/resources/static/downloads/Board_Vorlage.txt)).
 
 ```
 category_1:
