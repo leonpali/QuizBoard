@@ -51,6 +51,12 @@ class QuizService(
         val imageNames = images.map { nfc(it.originalFilename ?: "") }
         val invalidNames = imageNames.filter { !isPlainFileName(it) }
         if (invalidNames.isNotEmpty()) throw QuizSessionException("Ungültige Bilddateinamen: ${invalidNames.joinToString()}")
+        val unsupported = imageNames.filter { !isAllowedImage(it) }
+        if (unsupported.isNotEmpty()) {
+            throw QuizSessionException(
+                "Nicht unterstützte Bildformate: ${unsupported.joinToString()} (erlaubt: ${IMAGE_EXTENSIONS.joinToString()})"
+            )
+        }
 
         val boards = try {
             compiler.compile(boardFiles.map {
@@ -85,6 +91,10 @@ class QuizService(
     }
 
     companion object {
+        val IMAGE_EXTENSIONS = listOf("jpg", "jpeg", "png", "gif", "webp", "avif", "bmp")
+
+        fun isAllowedImage(name: String): Boolean = name.substringAfterLast('.', "").lowercase() in IMAGE_EXTENSIONS
+
         fun isPlainFileName(name: String): Boolean =
             name.isNotBlank() && name != "." && name != ".." && Paths.get(name).fileName.toString() == name
 

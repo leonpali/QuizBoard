@@ -25,6 +25,7 @@ class HomeController(private val quizService: QuizService, private val sessions:
         model.addAttribute("hostedCode", sessions.findByHostToken(hostToken)?.code)
         model.addAttribute("joinedCode", sessions.findPlayer(playerToken)?.first?.code)
         model.addAttribute("bundledImages", quizService.bundledImages)
+        model.addAttribute("imageAccept", QuizService.IMAGE_EXTENSIONS.joinToString(",") { ".$it" })
         return "index"
     }
 

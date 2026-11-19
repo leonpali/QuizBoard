@@ -47,8 +47,8 @@
 
                 <label class="field">
                     <span class="field-title">2. Bilder</span>
-                    <span class="field-hint">Alle Bilder, die in den Board-Dateien unter <code>img:</code> verwendet werden</span>
-                    <input type="file" id="images" name="images" accept="image/*" multiple>
+                    <span class="field-hint">Alle Bilder, die in den Board-Dateien unter <code>img:</code> verwendet werden (jpg, png, gif, webp, avif, bmp)</span>
+                    <input type="file" id="images" name="images" th:accept="${imageAccept}" multiple>
                 </label>
 
                 <div id="required-images" class="required-images" hidden>
