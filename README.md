@@ -15,7 +15,7 @@ Built with Kotlin, Spring Boot and Thymeleaf. The UI is in German.
 
 ## Running locally
 
-Requirements: JDK 21. The Gradle 8.7 wrapper doesn't run on newer JDKs.
+Requirements: Java 21 to run Gradle (Gradle 8.14 doesn't run on Java 25 or newer). If no full JDK 21 is installed, Gradle downloads one automatically for compiling.
 
 ```bash
 ./gradlew bootRun
