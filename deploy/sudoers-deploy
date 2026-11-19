@@ -1,0 +1,1 @@
+deploy ALL=(root) NOPASSWD: /usr/bin/install -m 644 /home/deploy/quizabfahrt.jar /opt/quizabfahrt/quizabfahrt.jar, /usr/bin/systemctl restart quizabfahrt

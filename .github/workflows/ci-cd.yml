@@ -1,0 +1,63 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  # Deploying restarts the app and ends all running quizzes, so it only happens on demand
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - run: ./gradlew build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: quizabfahrt-jar
+          path: build/libs/QuizAbfahrt-0.0.1-SNAPSHOT.jar
+          retention-days: 7
+
+  deploy:
+    needs: build
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    concurrency: production
+    env:
+      DEPLOY_TARGET: ${{ vars.DEPLOY_USER }}@${{ vars.DEPLOY_HOST }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: quizabfahrt-jar
+
+      - name: Set up SSH
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ vars.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+      - name: Copy jar and restart
+        run: |
+          scp QuizAbfahrt-0.0.1-SNAPSHOT.jar "$DEPLOY_TARGET:quizabfahrt.jar"
+          # Must match the sudoers rule on the server exactly
+          ssh "$DEPLOY_TARGET" "sudo /usr/bin/install -m 644 /home/${{ vars.DEPLOY_USER }}/quizabfahrt.jar /opt/quizabfahrt/quizabfahrt.jar \
+            && rm quizabfahrt.jar \
+            && sudo /usr/bin/systemctl restart quizabfahrt"
+
+      - name: Check that the site responds
+        run: curl -fsS -o /dev/null --retry 10 --retry-delay 3 --retry-all-errors "${{ vars.DEPLOY_URL }}"

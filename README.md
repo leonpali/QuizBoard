@@ -18,7 +18,6 @@ Built with Kotlin, Spring Boot and Thymeleaf. The UI is in German.
 Requirements: JDK 21. The Gradle 8.7 wrapper doesn't run on newer JDKs.
 
 ```bash
-chmod +x gradlew          # only needed once
 ./gradlew bootRun
 ```
 
@@ -101,9 +100,77 @@ Set in `src/main/resources/application.properties` or as command-line arguments 
 
 ## Deploying on a server
 
-- Run a single instance: quizzes only exist in that process's memory, and restarting the app ends all running quizzes.
-- Put it behind a reverse proxy (e.g. nginx or Caddy) with HTTPS. The app reads `X-Forwarded-*` headers from proxies on the same machine or private network, so cookies get the `Secure` flag and the lobby shows the public join link.
-- Live updates use Server-Sent Events on `/host/events` and `/play/events`. With nginx, disable buffering for them (the app also sends `X-Accel-Buffering: no`) and set `proxy_read_timeout` above 30 seconds.
+The `deploy/` folder contains everything for a Linux server (Ubuntu/Debian): the app runs as a systemd service on `127.0.0.1:8080`, and [Caddy](https://caddyserver.com) in front of it handles HTTPS with an automatic Let's Encrypt certificate.
+
+**Before you start**, point your domain at the server: an A record for e.g. `quiz.example.de` with the server's IPv4 address. Ports 80 and 443 must be open in the server's firewall.
+
+**One-time setup on the server:**
+
+```bash
+sudo apt update
+sudo apt install openjdk-21-jre-headless caddy
+
+sudo useradd --system --no-create-home --shell /usr/sbin/nologin quiz
+sudo mkdir -p /opt/quizabfahrt
+```
+
+Copy `deploy/quizabfahrt.service` to `/etc/systemd/system/` and `deploy/Caddyfile` to `/etc/caddy/Caddyfile`, replacing `quiz.example.de` with your domain. Then:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable quizabfahrt
+sudo systemctl reload caddy
+```
+
+**Deploying (from your computer):**
+
+```bash
+deploy/deploy.sh user@your-server
+```
+
+This runs the tests, builds the jar, copies it to the server and restarts the service. A restart ends all running quizzes, so don't deploy during a quiz night.
+
+## CI/CD with GitHub Actions
+
+[`.github/workflows/ci-cd.yml`](.github/workflows/ci-cd.yml) builds and tests every push and pull request. Deploying only happens when you start it: **Actions → CI/CD → Run workflow** on `main`. It runs the tests, copies the jar to the server over SSH, restarts the service and checks that the site responds.
+
+To deploy automatically on every push to `main` instead, change the deploy job's condition to `if: github.event_name == 'push' && github.ref == 'refs/heads/main'`. Keep in mind that every deploy ends running quizzes.
+
+**One-time setup on the server:** a `deploy` user for GitHub that may only replace the jar and restart the service.
+
+```bash
+sudo useradd --create-home --shell /bin/bash deploy
+sudo install -m 440 deploy/sudoers-deploy /etc/sudoers.d/deploy   # copy the file from this repo first
+sudo visudo -c                                                     # must report "parsed OK"
+```
+
+**One-time setup on your computer:** create a key pair only for GitHub and allow it on the server.
+
+```bash
+ssh-keygen -t ed25519 -f quizabfahrt-deploy -N "" -C "github-actions"
+ssh-copy-id -i quizabfahrt-deploy.pub deploy@your-server   # or append the .pub file to /home/deploy/.ssh/authorized_keys
+ssh-keyscan -t ed25519 your-server                         # the server's host key, for DEPLOY_KNOWN_HOSTS
+```
+
+**One-time setup on GitHub** (repository **Settings → Secrets and variables → Actions**):
+
+| Name | Kind | Value |
+|---|---|---|
+| `DEPLOY_SSH_KEY` | Secret | Contents of the private key file `quizabfahrt-deploy` |
+| `DEPLOY_HOST` | Variable | Server address, e.g. `quiz.example.de` |
+| `DEPLOY_USER` | Variable | `deploy` |
+| `DEPLOY_KNOWN_HOSTS` | Variable | Output of the `ssh-keyscan` command above |
+| `DEPLOY_URL` | Variable | `https://quiz.example.de` |
+
+Then delete the local private key file. The deploy job runs in the GitHub environment `production`; under **Settings → Environments** you can add yourself as a required reviewer, so every deploy needs one more click to confirm.
+
+**Checking on it:** `systemctl status quizabfahrt` shows whether it runs, `journalctl -u quizabfahrt -f` follows the logs.
+
+**Notes:**
+
+- Run a single instance: quizzes only exist in that process's memory.
+- The app trusts `X-Forwarded-*` headers from proxies on the same machine or private network, so cookies get the `Secure` flag and the lobby shows the public join link. It only listens on `127.0.0.1`, so it can't be reached around Caddy.
+- Live updates use Server-Sent Events on `/host/events` and `/play/events`. Caddy passes them through without extra configuration. With nginx instead, disable buffering for them (the app also sends `X-Accel-Buffering: no`) and set `proxy_read_timeout` above 30 seconds.
 - Anyone who can reach the server can create a quiz. `quiz.max-sessions` and the upload limits keep this in check, but there is no password for creating quizzes.
 
 ## Project structure
@@ -122,6 +189,9 @@ src/main/resources/
 ├── static/css/             Styles
 ├── static/images/          Bundled images, usable by any quiz without uploading them
 └── boards/                 Example board file
+
+deploy/                     systemd service, Caddyfile, deploy script and sudoers rule for a server
+.github/workflows/          CI/CD pipeline
 ```
 
 Run the tests with `./gradlew test`.
