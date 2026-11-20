@@ -1,19 +1,13 @@
 package projects.kotlin.quizabfahrt.model
 
 data class Question(
-    val id: Int,
     val type: EQuestionTypes,
     val text: String?,
     val img: String?,
     val points: Int,
-    val answer: Answer,
-    var asked: Boolean = false
+    val answer: Answer
 ) {
-    fun getAnswerText(): String {
-        return answer.text!!
-    }
+    fun getAnswerText(): String? = answer.text
 
-    fun getAnswerImage(): String {
-        return answer.img!!
-    }
+    fun getAnswerImg(): String? = answer.img
 }

@@ -27,10 +27,10 @@
                         <form th:action="@{${ref.toPath('/score')}}" method="post">
                             <input type="hidden" name="playerId" th:value="${row.playerId}">
                             <button class="result-button correct" name="outcome" value="CORRECT"
-                                    th:classappend="${row.outcome != null and row.outcome.name() == 'CORRECT'} ? 'active' : ''"
+                                    th:classappend="${row.isCorrect()} ? 'active' : ''"
                                     th:text="'✔ +' + ${question.points}">✔ +300</button>
                             <button class="result-button wrong" name="outcome" value="WRONG"
-                                    th:classappend="${row.outcome != null and row.outcome.name() == 'WRONG'} ? 'active' : ''"
+                                    th:classappend="${row.isWrong()} ? 'active' : ''"
                                     th:text="'✘ −' + ${penalty}">✘ −150</button>
                         </form>
                     </td>

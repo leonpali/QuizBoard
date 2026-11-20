@@ -29,7 +29,7 @@ class AnswerController(private val questionService: QuestionService, private val
         model.addAttribute("question", current)
         model.addAttribute(
             "nextUrl",
-            if (sessions.hostState(session).players.isEmpty()) ref.getBoardPath() else ref.toPath("/score"),
+            if (session.hasPlayers()) ref.toPath("/score") else ref.getBoardPath(),
         )
 
         return when (current.answer.type) {

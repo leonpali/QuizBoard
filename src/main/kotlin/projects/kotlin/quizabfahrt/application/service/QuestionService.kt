@@ -16,10 +16,6 @@ class QuestionService {
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Board ${boardIndex + 1} existiert nicht")
     }
 
-    fun changeAskedStatus(session: QuizSession, ref: QuestionRef) {
-        getQuestion(session, ref).asked = true
-    }
-
     fun getQuestion(session: QuizSession, ref: QuestionRef): Question {
         return getBoard(session, ref.board)
             .categories.getOrNull(ref.category)

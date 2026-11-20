@@ -16,14 +16,14 @@
                 </tr>
             </thead>
             <tbody>
-                <tr th:each="i : ${#numbers.sequence(0, rows - 1)}">
-                    <td class="table-cell" th:each="cat, column : ${categories}">
-                        <form th:action="@{/board/{b}/category/{c}/question/{q}/open(b=${board},c=${column.count},q=${i + 1})}" method="post">
+                <tr th:each="row : ${rows}">
+                    <td class="table-cell" th:each="cell : ${row}">
+                        <form th:action="@{${cell.openPath}}" method="post">
                             <button class="question-button"
                                     type="submit"
-                                    th:text="${cat.questions[i].points}"
-                                    th:disabled="${cat.questions[i].asked}"
-                                    th:classappend="${cat.questions[i].asked} ? ' disabled' : ''">100
+                                    th:text="${cell.points}"
+                                    th:disabled="${cell.asked}"
+                                    th:classappend="${cell.asked} ? ' disabled' : ''">100
                             </button>
                         </form>
                     </td>

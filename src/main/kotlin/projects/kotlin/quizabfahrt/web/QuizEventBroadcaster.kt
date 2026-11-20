@@ -7,7 +7,6 @@ import org.springframework.stereotype.Component
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter
 import projects.kotlin.quizabfahrt.application.session.Player
 import projects.kotlin.quizabfahrt.application.session.QuizSession
-import projects.kotlin.quizabfahrt.application.session.QuizSessionService
 import projects.kotlin.quizabfahrt.application.session.SessionChangedEvent
 import projects.kotlin.quizabfahrt.application.session.SessionEndedEvent
 import java.time.Duration
@@ -15,7 +14,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 
 @Component
-class QuizEventBroadcaster(private val sessions: QuizSessionService) {
+class QuizEventBroadcaster {
 
     private class Subscriber(val emitter: SseEmitter, val player: Player?, val list: MutableList<Subscriber>)
 
@@ -59,9 +58,7 @@ class QuizEventBroadcaster(private val sessions: QuizSessionService) {
     }
 
     private fun sendState(session: QuizSession, subscriber: Subscriber) {
-        val state: Any = subscriber.player
-            ?.let { sessions.playerState(session, it) }
-            ?: sessions.hostState(session)
+        val state: Any = subscriber.player?.let { session.getPlayerState(it) } ?: session.getHostState()
         send(subscriber, SseEmitter.event().name("state").data(state, MediaType.APPLICATION_JSON))
     }
 

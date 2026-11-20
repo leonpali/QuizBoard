@@ -32,7 +32,7 @@ class ScoreController(private val questionService: QuestionService, private val 
         model.addAttribute("ref", ref)
         model.addAttribute("question", current)
         model.addAttribute("penalty", current.points / 2)
-        model.addAttribute("rows", sessions.scoringRows(session, ref))
+        model.addAttribute("rows", session.getScoringRows(ref))
         return "score"
     }
 

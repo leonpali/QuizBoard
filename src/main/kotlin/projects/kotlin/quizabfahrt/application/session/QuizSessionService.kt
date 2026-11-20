@@ -77,7 +77,7 @@ class QuizSessionService(
         if (token == null) return null
         for (session in sessionsByCode.values) {
             if (session.isExpired()) continue
-            val player = synchronized(session) { session.players[token] } ?: continue
+            val player = session.findPlayer(token) ?: continue
             return session to player
         }
         return null
@@ -94,103 +94,34 @@ class QuizSessionService(
             throw QuizSessionException("Kein Quiz mit diesem Code gefunden.")
         }
 
-        val trimmedName = name.trim()
-        val player = synchronized(session) {
-            existingToken?.let { session.players[it] }?.let { return session to it }
+        existingToken?.let { session.findPlayer(it) }?.let { return session to it }
 
-            if (trimmedName.isEmpty() || trimmedName.length > MAX_NAME_LENGTH) {
-                throw QuizSessionException("Der Name muss zwischen 1 und $MAX_NAME_LENGTH Zeichen lang sein.")
-            }
-            if (session.players.values.any { it.name.equals(trimmedName, ignoreCase = true) }) {
-                throw QuizSessionException("Der Name \"$trimmedName\" ist in diesem Quiz schon vergeben.")
-            }
-            if (session.players.size >= maxPlayers) {
-                throw QuizSessionException("Das Quiz ist voll.")
-            }
-            Player(session.nextPlayerId++, newToken(), trimmedName).also { session.players[it.token] = it }
+        val trimmedName = name.trim()
+        if (trimmedName.isEmpty() || trimmedName.length > MAX_NAME_LENGTH) {
+            throw QuizSessionException("Der Name muss zwischen 1 und $MAX_NAME_LENGTH Zeichen lang sein.")
         }
+        val player = session.addPlayer(trimmedName, newToken(), maxPlayers)
         events.publishEvent(SessionChangedEvent(session))
         return session to player
     }
 
     fun openQuestion(session: QuizSession, ref: QuestionRef) {
-        synchronized(session) {
-            session.currentQuestion = ref
-            session.buzzingOpen = true
-        }
+        session.openQuestion(ref)
         events.publishEvent(SessionChangedEvent(session))
     }
 
     fun closeBuzzing(session: QuizSession) {
-        val changed = synchronized(session) {
-            session.buzzingOpen.also { session.buzzingOpen = false }
-        }
-        if (changed) events.publishEvent(SessionChangedEvent(session))
+        if (session.closeBuzzing()) events.publishEvent(SessionChangedEvent(session))
     }
 
     fun buzz(session: QuizSession, player: Player): PlayerState {
-        val accepted = synchronized(session) {
-            val key = session.currentQuestion
-            if (!session.buzzingOpen || key == null) return@synchronized false
-            val order = session.buzzes.getOrPut(key) { mutableListOf() }
-            if (player in order) return@synchronized false
-            order.add(player)
-            true
-        }
-        if (accepted) events.publishEvent(SessionChangedEvent(session))
-        return playerState(session, player)
+        if (session.buzz(player)) events.publishEvent(SessionChangedEvent(session))
+        return session.getPlayerState(player)
     }
 
     fun toggleResult(session: QuizSession, ref: QuestionRef, playerId: Int, outcome: Outcome, points: Int) {
-        synchronized(session) {
-            if (session.players.values.none { it.id == playerId }) throw QuizSessionException("Unbekannter Teilnehmer.")
-            val results = session.results.getOrPut(ref) { HashMap() }
-            if (results[playerId]?.outcome == outcome) {
-                results.remove(playerId)
-            } else {
-                val delta = if (outcome == Outcome.CORRECT) points else -points / 2
-                results[playerId] = QuestionResult(outcome, delta)
-            }
-        }
+        session.toggleResult(ref, playerId, outcome, points)
         events.publishEvent(SessionChangedEvent(session))
-    }
-
-    fun scoringRows(session: QuizSession, ref: QuestionRef): List<ScoringRow> = synchronized(session) {
-        val buzzOrder = session.buzzes[ref].orEmpty()
-        val results = session.results[ref].orEmpty()
-        (buzzOrder + session.players.values.filter { it !in buzzOrder }).map { player ->
-            ScoringRow(
-                playerId = player.id,
-                name = player.name,
-                buzzPosition = buzzOrder.indexOf(player).takeIf { it >= 0 }?.plus(1),
-                outcome = results[player.id]?.outcome,
-                score = session.getScore(player),
-            )
-        }
-    }
-
-    fun ranking(session: QuizSession): List<RankedPlayer> = synchronized(session) { session.getRanking() }
-
-    fun hostState(session: QuizSession): HostState = synchronized(session) {
-        HostState(
-            code = session.code,
-            players = session.players.values
-                .map { PlayerScore(it.name, session.getScore(it)) }
-                .sortedByDescending { it.score },
-            buzzingOpen = session.buzzingOpen,
-            buzzes = session.getCurrentBuzzes().map { it.name },
-        )
-    }
-
-    fun playerState(session: QuizSession, player: Player): PlayerState = synchronized(session) {
-        val position = session.getCurrentBuzzes().indexOf(player)
-        PlayerState(
-            name = player.name,
-            score = session.getScore(player),
-            buzzingOpen = session.buzzingOpen,
-            buzzed = position >= 0,
-            position = if (position >= 0) position + 1 else null,
-        )
     }
 
     fun end(session: QuizSession) {

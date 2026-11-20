@@ -20,8 +20,6 @@ class CompilationEngine {
     private var currentFileName = ""
     private var currentLine = 0
     private var currentToken = ""
-    private var currentQuestionId = 0
-    private var currentCategoryId = 0
     private var requireFullCategories = true
 
     @Synchronized
@@ -31,11 +29,9 @@ class CompilationEngine {
         for (f: BoardFile in files) {
             currentFileName = f.name
             currentLine = 0
-            currentQuestionId = 0
-            currentCategoryId = 0
             sc = Scanner(f.content.removePrefix("﻿"))
             advanceToken()
-            boards.add(compileBoard(boards.size))
+            boards.add(compileBoard())
             sc!!.close()
         }
         return boards
@@ -64,20 +60,18 @@ class CompilationEngine {
         return if (v == "" || v == "null") null else v
     }
 
-    private fun compileBoard(id: Int): Board {
+    private fun compileBoard(): Board {
         val categories = LinkedList<Category>()
 
         while (currentToken != "__EOF__") {
             categories.add(compileCategory())
         }
         if (categories.isEmpty() && requireFullCategories) error("Datei enthält keine Kategorien")
-        return Board(id, categories)
+        return Board(categories)
     }
 
     private fun compileCategory(): Category {
         val questions = LinkedList<Question>()
-        val id = currentCategoryId
-        currentCategoryId++
 
         if (!currentToken.startsWith("category")) error("'category_N:' erwartet, gefunden: '$currentToken'")
         advanceToken()
@@ -95,12 +89,10 @@ class CompilationEngine {
         if (requireFullCategories && questions.size != QUESTIONS_PER_CATEGORY) {
             error("Kategorie '$name' hat ${questions.size} Fragen, erwartet werden $QUESTIONS_PER_CATEGORY")
         }
-        return Category(id, name, questions)
+        return Category(name, questions)
     }
 
     private fun compileQuestion(): Question {
-        val id = currentQuestionId
-
         if (!currentToken.startsWith("question")) error("'question_N:' erwartet, gefunden: '$currentToken'")
         advanceToken()
 
@@ -122,13 +114,10 @@ class CompilationEngine {
 
         val answer = compileAnswer()
 
-        return Question(id, type, text, img, points, answer)
+        return Question(type, text, img, points, answer)
     }
 
     private fun compileAnswer(): Answer {
-        val id = currentQuestionId
-        currentQuestionId++
-
         if (!currentToken.startsWith("answer")) error("'answer:' erwartet, gefunden: '$currentToken'")
         advanceToken()
 
@@ -145,6 +134,6 @@ class CompilationEngine {
         if (type != EAnswerTypes.TEXT && img == null) error("Antwort vom Typ '${type.name.lowercase()}' braucht ein Bild")
         advanceToken()
 
-        return Answer(id, type, text, img)
+        return Answer(type, text, img)
     }
 }

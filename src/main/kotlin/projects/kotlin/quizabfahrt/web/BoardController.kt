@@ -11,6 +11,8 @@ import projects.kotlin.quizabfahrt.application.service.parser.CompilationEngine
 import projects.kotlin.quizabfahrt.application.session.QuizSessionService
 import projects.kotlin.quizabfahrt.model.QuestionRef
 
+data class BoardCell(val points: Int, val asked: Boolean, val openPath: String)
+
 @Controller
 class BoardController(private val questionService: QuestionService, private val sessions: QuizSessionService) {
 
@@ -21,13 +23,20 @@ class BoardController(private val questionService: QuestionService, private val 
         @CookieValue(SessionCookies.HOST, required = false) hostToken: String?,
     ): String {
         val session = sessions.requireHost(hostToken)
-        val categories = questionService.getBoard(session, QuestionRef.getBoardIndex(board)).categories
+        val boardIndex = QuestionRef.getBoardIndex(board)
+        val categories = questionService.getBoard(session, boardIndex).categories
         sessions.closeBuzzing(session)
 
+        val rows = (0 until CompilationEngine.QUESTIONS_PER_CATEGORY).map { row ->
+            categories.mapIndexed { category, it ->
+                val ref = QuestionRef(boardIndex, category, row)
+                BoardCell(it.questions[row].points, session.isAsked(ref), ref.toPath("/open"))
+            }
+        }
+
         val isLastBoard = board >= session.boards.size
-        model.addAttribute("board", board)
         model.addAttribute("categories", categories)
-        model.addAttribute("rows", CompilationEngine.QUESTIONS_PER_CATEGORY)
+        model.addAttribute("rows", rows)
         model.addAttribute("nextUrl", if (isLastBoard) "/host/scoreboard" else "/board/${board + 1}")
         model.addAttribute("nextLabel", if (isLastBoard) "Zum Endstand" else "Nächstes Board")
         return "board"
@@ -42,7 +51,7 @@ class BoardController(private val questionService: QuestionService, private val 
     ): String {
         val session = sessions.requireHost(hostToken)
         val ref = QuestionRef.fromPath(board, category, question)
-        questionService.changeAskedStatus(session, ref)
+        questionService.getQuestion(session, ref)
         sessions.openQuestion(session, ref)
         return "redirect:${ref.toPath()}"
     }

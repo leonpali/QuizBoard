@@ -31,7 +31,7 @@ class QuizSessionServiceTest {
             uploadDir.toString(), Duration.ofHours(24), maxSessions = 2, maxPlayers = 3,
             events = ApplicationEventPublisher { publishedEvents.add(it) },
         )
-        session = service.create(listOf(Board(0, emptyList())), previousHostToken = null) {}
+        session = service.create(listOf(Board(emptyList())), previousHostToken = null) {}
     }
 
     @Test
@@ -56,7 +56,7 @@ class QuizSessionServiceTest {
 
         assertEquals("Anna", anna.name)
         assertSame(anna, again)
-        assertEquals(listOf(PlayerScore("Anna", 0)), service.hostState(session).players)
+        assertEquals(listOf(PlayerScore("Anna", 0)), session.getHostState().players)
     }
 
     @Test
@@ -92,9 +92,20 @@ class QuizSessionServiceTest {
         assertEquals(1, service.buzz(session, anna).position)
 
         service.closeBuzzing(session)
-        val state = service.playerState(session, anna)
+        val state = session.getPlayerState(anna)
         assertFalse(state.buzzingOpen)
         assertTrue(state.buzzed)
+    }
+
+    @Test
+    fun `opening a question marks it as asked`() {
+        val ref = QuestionRef(0, 1, 4)
+        assertFalse(session.isAsked(ref))
+
+        service.openQuestion(session, ref)
+
+        assertTrue(session.isAsked(ref))
+        assertFalse(session.isAsked(QuestionRef(0, 1, 3)))
     }
 
     @Test
@@ -106,10 +117,10 @@ class QuizSessionServiceTest {
         service.buzz(session, ben)
         service.buzz(session, anna)
         service.buzz(session, ben)
-        assertEquals(listOf("Ben", "Anna"), service.hostState(session).buzzes)
+        assertEquals(listOf("Ben", "Anna"), session.getHostState().buzzes)
 
         service.openQuestion(session, QuestionRef(0, 0, 1))
-        assertEquals(emptyList(), service.hostState(session).buzzes)
+        assertEquals(emptyList(), session.getHostState().buzzes)
         assertEquals(1, service.buzz(session, anna).position)
     }
 
@@ -138,9 +149,9 @@ class QuizSessionServiceTest {
         service.toggleResult(session, QuestionRef(0, 0, 0), ben.id, Outcome.CORRECT, 300)
         service.toggleResult(session, QuestionRef(0, 0, 1), anna.id, Outcome.CORRECT, 500)
 
-        assertEquals(350, service.playerState(session, anna).score)
-        assertEquals(300, service.playerState(session, ben).score)
-        assertEquals(listOf(PlayerScore("Anna", 350), PlayerScore("Ben", 300)), service.hostState(session).players)
+        assertEquals(350, session.getPlayerState(anna).score)
+        assertEquals(300, session.getPlayerState(ben).score)
+        assertEquals(listOf(PlayerScore("Anna", 350), PlayerScore("Ben", 300)), session.getHostState().players)
     }
 
     @Test
@@ -151,8 +162,8 @@ class QuizSessionServiceTest {
         service.toggleResult(session, QuestionRef(0, 0, 0), anna.id, Outcome.CORRECT, 200)
         service.toggleResult(session, QuestionRef(0, 0, 0), ben.id, Outcome.CORRECT, 200)
 
-        assertEquals(200, service.playerState(session, anna).score)
-        assertEquals(200, service.playerState(session, ben).score)
+        assertEquals(200, session.getPlayerState(anna).score)
+        assertEquals(200, session.getPlayerState(ben).score)
     }
 
     @Test
@@ -161,11 +172,11 @@ class QuizSessionServiceTest {
 
         service.toggleResult(session, QuestionRef(0, 0, 0), anna.id, Outcome.CORRECT, 400)
         service.toggleResult(session, QuestionRef(0, 0, 0), anna.id, Outcome.WRONG, 400)
-        assertEquals(-200, service.playerState(session, anna).score)
+        assertEquals(-200, session.getPlayerState(anna).score)
 
         service.toggleResult(session, QuestionRef(0, 0, 0), anna.id, Outcome.WRONG, 400)
-        assertEquals(0, service.playerState(session, anna).score)
-        assertNull(service.scoringRows(session, QuestionRef(0, 0, 0)).single().outcome)
+        assertEquals(0, session.getPlayerState(anna).score)
+        assertNull(session.getScoringRows(QuestionRef(0, 0, 0)).single().outcome)
     }
 
     @Test
@@ -179,7 +190,7 @@ class QuizSessionServiceTest {
         service.buzz(session, ben)
         service.toggleResult(session, QuestionRef(0, 0, 2), ben.id, Outcome.CORRECT, 100)
 
-        val rows = service.scoringRows(session, QuestionRef(0, 0, 2))
+        val rows = session.getScoringRows(QuestionRef(0, 0, 2))
         assertEquals(listOf("Cem", "Ben", "Anna"), rows.map { it.name })
         assertEquals(listOf(1, 2, null), rows.map { it.buzzPosition })
         assertEquals(listOf(null, Outcome.CORRECT, null), rows.map { it.outcome })
@@ -208,7 +219,7 @@ class QuizSessionServiceTest {
 
         assertEquals(
             listOf(RankedPlayer(1, "Ben", 300), RankedPlayer(2, "Cem", 200), RankedPlayer(3, "Anna", 100)),
-            service.ranking(session),
+            session.getRanking(),
         )
     }
 
@@ -221,7 +232,7 @@ class QuizSessionServiceTest {
         joinWithScore("Dana", 200)
         joinWithScore("Emil", 100)
 
-        assertEquals(listOf(1, 1, 3, 3, 5), service.ranking(session).map { it.place })
+        assertEquals(listOf(1, 1, 3, 3, 5), session.getRanking().map { it.place })
     }
 
     @Test
@@ -234,7 +245,7 @@ class QuizSessionServiceTest {
 
         assertEquals(
             listOf(RankedPlayer(1, "Anna", 500), RankedPlayer(1, "Ben", 500), RankedPlayer(1, "Cem", 500), RankedPlayer(4, "Dana", -50)),
-            service.ranking(session),
+            session.getRanking(),
         )
     }
 

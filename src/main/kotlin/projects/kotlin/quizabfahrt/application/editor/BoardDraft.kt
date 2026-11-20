@@ -14,7 +14,13 @@ class QuestionDraft(
     var answerType: EAnswerTypes = EAnswerTypes.TEXT,
     var answerText: String? = "Antwort",
     var answerImg: String? = null,
-)
+) {
+    fun getTypeKey(): String = type.key
+
+    fun isImage() = type == EQuestionTypes.IMAGE
+
+    fun isAnswerImage() = answerType == EAnswerTypes.IMAGE
+}
 
 class CategoryDraft(var name: String, val questions: MutableList<QuestionDraft> = mutableListOf()) {
 
