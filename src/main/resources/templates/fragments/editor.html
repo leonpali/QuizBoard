@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<body>
+    <script th:fragment="scripts" th:attr="nonce=${cspNonce}">
+        document.querySelectorAll('form[data-confirm]').forEach(form => form.addEventListener('submit', e => {
+            if (!confirm(form.dataset.confirm)) e.preventDefault();
+        }));
+
+        const downloadForm = document.getElementById('download-form');
+        if (downloadForm) {
+            downloadForm.addEventListener('submit', () => setTimeout(() => location.href = '/editor?downloaded', 1500));
+        }
+    </script>
+</body>
+</html>

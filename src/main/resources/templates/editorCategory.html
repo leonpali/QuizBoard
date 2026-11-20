@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Kategorie bearbeiten</title>
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+    <link rel="stylesheet" th:href="@{/css/editor.css}">
+</head>
+<body>
+    <main class="home">
+        <p class="breadcrumb"><a th:href="@{/editor/board}">← Kategorien</a></p>
+        <h1 th:text="${category.name}">Kategorie</h1>
+
+        <div class="errors" th:if="${error}">
+            <p th:text="${error}">Fehler</p>
+        </div>
+
+        <section class="card">
+            <h2 th:text="${#lists.size(questions)} + ' von ' + ${questionsPerCategory} + ' Fragen'">6 von 6 Fragen</h2>
+            <p class="warning" th:unless="${category.complete}">
+                Zum Spielen werden genau <span th:text="${questionsPerCategory}">6</span> Fragen benötigt.
+            </p>
+            <p class="field-hint">Die Reihenfolge bestimmt die Zeile auf dem Board. Die Punkte ändern sich beim Verschieben nicht.</p>
+
+            <ol class="editor-list">
+                <li th:each="question, it : ${questions}">
+                    <div class="item-text">
+                        <span class="item-title">
+                            <span th:text="${question.points}">100</span> Punkte ·
+                            <span th:text="${question.type.key}">text</span>
+                        </span>
+                        <span class="item-meta"
+                              th:text="${question.type.name() == 'IMAGE'} ? ${'Bild: ' + question.img} : ${question.text}">Fragetext</span>
+                        <span class="item-meta"
+                              th:text="'Antwort: ' + (${question.answerType.name() == 'IMAGE'} ? ${'Bild: ' + question.answerImg} : ${question.answerText})">Antwort</span>
+                    </div>
+                    <div class="item-actions">
+                        <form class="move-buttons" th:action="@{'/editor/categories/' + ${c} + '/questions/' + ${it.index} + '/move'}" method="post">
+                            <button type="submit" class="move-button" name="direction" value="UP"
+                                    th:disabled="${it.first}" title="Nach oben" aria-label="Nach oben">↑</button>
+                            <button type="submit" class="move-button" name="direction" value="DOWN"
+                                    th:disabled="${it.last}" title="Nach unten" aria-label="Nach unten">↓</button>
+                        </form>
+                        <a class="link-button" th:href="@{'/editor/categories/' + ${c} + '/questions/' + ${it.index} + '/question'}">Frage bearbeiten</a>
+                        <a class="link-button" th:href="@{'/editor/categories/' + ${c} + '/questions/' + ${it.index} + '/answer'}">Antwort bearbeiten</a>
+                        <form th:action="@{'/editor/categories/' + ${c} + '/questions/' + ${it.index} + '/delete'}" method="post"
+                              data-confirm="Diese Frage löschen?">
+                            <button type="submit" class="danger-button">Löschen</button>
+                        </form>
+                    </div>
+                </li>
+            </ol>
+
+            <form th:action="@{'/editor/categories/' + ${c} + '/questions'}" method="post"
+                  th:if="${#lists.size(questions) < maxQuestions}">
+                <button type="submit" class="primary-button">Frage hinzufügen</button>
+            </form>
+        </section>
+
+        <section class="card">
+            <h2>Kategorie umbenennen</h2>
+            <form class="inline-form" th:action="@{'/editor/categories/' + ${c} + '/rename'}" method="post">
+                <input class="text-input" type="text" name="name" th:value="${category.name}" maxlength="100" required aria-label="Name">
+                <button type="submit" class="primary-button">Umbenennen</button>
+            </form>
+        </section>
+    </main>
+    <script th:replace="~{fragments/editor :: scripts}"></script>
+</body>
+</html>

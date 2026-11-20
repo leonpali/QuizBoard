@@ -11,6 +11,7 @@ Built with Kotlin, Spring Boot and Thymeleaf. The UI is in German.
 - **Phone buzzers**: buzzers unlock the moment the host opens a question. Each participant can buzz once per question, and the buzz order appears live on the big screen.
 - **Scoring**: after each answer, the host marks participants as correct (full points) or wrong (minus half the points). Several participants can score on the same question.
 - **Final scoreboard**: a podium for places 1–3 and a list of everyone else. Ties share a place, and the following places are skipped (1, 1, 3).
+- **Board editor**: create a board or edit an uploaded one in the browser, then download it as a `.txt` file.
 - **No database**: quizzes live in memory and expire after 24 hours, along with their images and the device cookies.
 
 ## Running locally
@@ -83,6 +84,16 @@ category_2:
 | `points` | Any whole number. A wrong answer deducts half (rounded down). |
 
 Errors in a file are reported on upload with the file name and line number.
+
+## Board editor
+
+Instead of writing board files by hand, use **Board bearbeiten** on the start page (`/editor`). Start with an empty board or upload an existing file, then:
+
+1. The overview lists the categories and how many questions each has. Add, open, reorder (↑ ↓) or delete categories here.
+2. A category shows its questions, which can be reordered the same way; the order is the row on the board. Each question has **Frage bearbeiten** (type, text, image name, points) and **Antwort bearbeiten** (type, text, image name). The forms check the same rules as the parser, so the result is always a valid file.
+3. **Herunterladen** saves the board as a `.txt` file.
+
+Nothing is stored permanently. The draft only exists in memory, tied to the device by a cookie, and is deleted as soon as the file is downloaded, or 6 hours after the last change. Categories may have fewer or more than 6 questions while you work on them; the editor warns about it but still lets you download and upload the file again later. Only playing a quiz requires exactly 6 questions per category. The editor works with image names only; the images themselves are uploaded when creating the quiz.
 
 ## Configuration
 
@@ -184,7 +195,8 @@ src/main/kotlin/projects/kotlin/quizabfahrt/
 ├── application/
 │   ├── service/            QuizService (upload + validation), QuestionService
 │   │   └── parser/         CompilationEngine: parses the .txt board files
-│   └── session/            QuizSession and QuizSessionService: codes, players, buzzing, scores, ranking
+│   ├── session/            QuizSession and QuizSessionService: codes, players, buzzing, scores, ranking
+│   └── editor/             BoardDraft and BoardEditorService: in-memory drafts for the board editor
 └── web/                    Controllers, cookies, live updates (QuizEventBroadcaster)
 
 src/main/resources/

@@ -26,6 +26,12 @@
         </section>
 
         <section class="card">
+            <h2>Board bearbeiten</h2>
+            <p class="field-hint">Eine Board-Datei neu erstellen oder eine bestehende bearbeiten und als .txt herunterladen.</p>
+            <a class="primary-button" th:href="@{/editor}">Board bearbeiten</a>
+        </section>
+
+        <section class="card">
             <h2>Quiz erstellen</h2>
             <p class="field-hint" th:if="${hostedCode}">Ein neues Quiz beendet dein laufendes Quiz.</p>
             <p class="field-hint">

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Board-Editor</title>
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+    <link rel="stylesheet" th:href="@{/css/editor.css}">
+</head>
+<body>
+    <main class="home">
+        <p class="breadcrumb"><a th:href="@{/}">← Startseite</a></p>
+        <h1>Board-Editor</h1>
+
+        <div class="notice" th:if="${downloaded}">
+            <p>Die Datei wurde heruntergeladen und der Entwurf aus dem Speicher gelöscht.</p>
+        </div>
+
+        <div class="errors" th:if="${error}">
+            <p th:text="${error}">Fehler</p>
+        </div>
+
+        <section class="card" th:if="${draft}">
+            <h2>Offener Entwurf</h2>
+            <p>
+                <strong th:text="${draft.fileName}">Board.txt</strong>
+                mit <span th:text="${#lists.size(draft.categories)}">3</span> Kategorien
+            </p>
+            <a class="primary-button" th:href="@{/editor/board}">Weiter bearbeiten</a>
+            <p class="field-hint">Ein neues oder hochgeladenes Board ersetzt diesen Entwurf.</p>
+        </section>
+
+        <section class="card">
+            <h2>Board-Datei bearbeiten</h2>
+            <form th:action="@{/editor/upload}" method="post" enctype="multipart/form-data">
+                <label class="field">
+                    <span class="field-hint">Eine bestehende Board-Datei (.txt) hochladen, auch wenn sie noch unvollständig ist</span>
+                    <input type="file" name="board" accept=".txt,text/plain" required>
+                </label>
+                <button type="submit" class="primary-button">Hochladen &amp; bearbeiten</button>
+            </form>
+        </section>
+
+        <section class="card">
+            <h2>Neues Board</h2>
+            <form th:action="@{/editor/new}" method="post">
+                <button type="submit" class="primary-button">Leeres Board erstellen</button>
+            </form>
+        </section>
+
+        <p class="field-hint">
+            Es wird nichts dauerhaft gespeichert. Der Entwurf liegt nur im Arbeitsspeicher und wird gelöscht,
+            sobald du die Datei herunterlädst, oder <span th:text="${ttlHours}">6</span> Stunden nach der letzten Änderung.
+        </p>
+    </main>
+</body>
+</html>

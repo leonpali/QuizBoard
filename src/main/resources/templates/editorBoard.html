@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Board bearbeiten</title>
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+    <link rel="stylesheet" th:href="@{/css/editor.css}">
+</head>
+<body>
+    <main class="home">
+        <p class="breadcrumb"><a th:href="@{/editor}">← Board-Editor</a></p>
+        <h1 th:text="${draft.fileName}">Board.txt</h1>
+
+        <div class="errors" th:if="${error}">
+            <p th:text="${error}">Fehler</p>
+        </div>
+
+        <section class="card">
+            <h2>Kategorien</h2>
+            <p class="field-hint" th:if="${#lists.isEmpty(categories)}">Noch keine Kategorien.</p>
+
+            <ul class="editor-list">
+                <li th:each="category, it : ${categories}">
+                    <a class="item-text" th:href="@{'/editor/categories/' + ${it.index}}">
+                        <span class="item-title" th:text="${category.name}">Kategorie</span>
+                        <span class="item-meta" th:classappend="${category.complete} ? '' : 'warning'"
+                              th:text="${#lists.size(category.questions)} + ' von ' + ${questionsPerCategory} + ' Fragen'">6 von 6 Fragen</span>
+                    </a>
+                    <div class="item-actions">
+                        <form class="move-buttons" th:action="@{'/editor/categories/' + ${it.index} + '/move'}" method="post">
+                            <button type="submit" class="move-button" name="direction" value="UP"
+                                    th:disabled="${it.first}" title="Nach oben" aria-label="Nach oben">↑</button>
+                            <button type="submit" class="move-button" name="direction" value="DOWN"
+                                    th:disabled="${it.last}" title="Nach unten" aria-label="Nach unten">↓</button>
+                        </form>
+                        <a class="link-button" th:href="@{'/editor/categories/' + ${it.index}}">Bearbeiten</a>
+                        <form th:action="@{'/editor/categories/' + ${it.index} + '/delete'}" method="post"
+                              th:attr="data-confirm=${'Kategorie „' + category.name + '“ mit allen Fragen löschen?'}">
+                            <button type="submit" class="danger-button">Löschen</button>
+                        </form>
+                    </div>
+                </li>
+            </ul>
+
+            <form class="inline-form" th:action="@{/editor/categories}" method="post"
+                  th:if="${#lists.size(categories) < maxCategories}">
+                <input class="text-input" type="text" name="name" placeholder="Name der neuen Kategorie" maxlength="100" required>
+                <button type="submit" class="primary-button">Kategorie hinzufügen</button>
+            </form>
+        </section>
+
+        <section class="card">
+            <h2>Herunterladen</h2>
+            <div class="warnings" th:unless="${#lists.isEmpty(incomplete)}">
+                <p>
+                    Zum Spielen braucht jede Kategorie genau <span th:text="${questionsPerCategory}">6</span> Fragen.
+                    Noch nicht vollständig: <span th:text="${#strings.listJoin(incomplete, ', ')}">Kategorie</span>
+                </p>
+                <p>Du kannst die Datei trotzdem herunterladen und später hier weiterbearbeiten.</p>
+            </div>
+            <form id="download-form" class="inline-form" th:action="@{/editor/download}" method="post">
+                <input class="text-input" type="text" name="fileName" th:value="${draft.fileName}" maxlength="100" aria-label="Dateiname">
+                <button type="submit" class="primary-button">Herunterladen</button>
+            </form>
+            <p class="field-hint">Nach dem Herunterladen wird der Entwurf aus dem Speicher gelöscht.</p>
+
+            <form th:action="@{/editor/discard}" method="post" data-confirm="Entwurf verwerfen? Alle Änderungen gehen verloren.">
+                <button type="submit" class="secondary-button">Entwurf verwerfen</button>
+            </form>
+        </section>
+    </main>
+    <script th:replace="~{fragments/editor :: scripts}"></script>
+</body>
+</html>

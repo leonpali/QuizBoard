@@ -11,6 +11,7 @@ object SessionCookies {
 
     const val HOST = "quiz_host"
     const val PLAYER = "quiz_player"
+    const val EDITOR = "quiz_editor"
 
     fun set(request: HttpServletRequest, response: HttpServletResponse, name: String, value: String, expiresAt: Instant) {
         write(response, request, name, value, Duration.between(Instant.now(), expiresAt))

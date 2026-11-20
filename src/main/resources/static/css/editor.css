@@ -1,0 +1,160 @@
+.breadcrumb {
+    margin: 0;
+}
+
+.breadcrumb a {
+    color: #777777;
+    text-decoration: none;
+}
+
+.breadcrumb a:hover {
+    color: #a714d9;
+}
+
+.notice {
+    background: #e8f5e9;
+    border: 1px solid #1a8f1a;
+    color: #1a5e1a;
+    border-radius: 8px;
+    padding: 5px 15px;
+    margin-bottom: 20px;
+}
+
+.warnings {
+    background: #fff4e5;
+    border: 1px solid #e08a00;
+    border-radius: 8px;
+    padding: 5px 15px;
+    margin-bottom: 15px;
+}
+
+.warning {
+    color: #c06f00;
+}
+
+.editor-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 20px;
+}
+
+.editor-list li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 0;
+    border-top: 1px solid #eeeeee;
+}
+
+.item-text {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+    flex: 1 1 250px;
+    color: inherit;
+    text-decoration: none;
+}
+
+.item-title {
+    font-weight: bold;
+}
+
+.item-meta {
+    color: #777777;
+    font-size: 0.9em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.item-meta.warning {
+    color: #c06f00;
+}
+
+.item-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.item-actions form {
+    margin: 0;
+}
+
+.link-button,
+.danger-button {
+    display: inline-block;
+    padding: 6px 12px;
+    font-size: 0.9em;
+    border-radius: 8px;
+    border: 2px solid;
+    background: white;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.link-button {
+    border-color: #a714d9;
+    color: #a714d9;
+}
+
+.danger-button {
+    border-color: #c62828;
+    color: #c62828;
+}
+
+.move-buttons {
+    display: flex;
+    gap: 4px;
+}
+
+.move-button {
+    width: 2.2em;
+    padding: 6px 0;
+    font-size: 0.9em;
+    border-radius: 8px;
+    border: 2px solid #cccccc;
+    background: white;
+    cursor: pointer;
+}
+
+.move-button:hover:not(:disabled) {
+    border-color: #a714d9;
+    color: #a714d9;
+}
+
+.move-button:disabled {
+    opacity: 0.3;
+    cursor: default;
+}
+
+.inline-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.inline-form .text-input {
+    flex: 1 1 220px;
+}
+
+textarea.text-input,
+select.text-input {
+    width: 100%;
+    box-sizing: border-box;
+    font-family: inherit;
+}
+
+.points-input {
+    max-width: 10em;
+}
+
+.form-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
