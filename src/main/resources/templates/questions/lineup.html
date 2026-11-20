@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<body>
+    <div th:fragment="content">
+        <div id="strings">
+            <p th:each="entry : ${question.getLineup()}" class="hidden" th:text="${entry}">Eintrag</p>
+        </div>
+        <button class="continue-button" id="reveal-button">Aufdecken</button>
+
+        <script th:attr="nonce=${cspNonce}">
+            const entries = document.querySelectorAll('#strings p');
+            let index = 0;
+
+            document.getElementById('reveal-button').addEventListener('click', () => {
+                if (index < entries.length) {
+                    entries[index].classList.remove('hidden');
+                    entries[index].classList.add('visible');
+                    index++;
+                }
+            });
+        </script>
+    </div>
+</body>
+</html>

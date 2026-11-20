@@ -2,12 +2,12 @@ package projects.kotlin.quizabfahrt.web
 
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
-import org.springframework.web.bind.annotation.CookieValue
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import projects.kotlin.quizabfahrt.application.service.QuestionService
 import projects.kotlin.quizabfahrt.application.service.parser.CompilationEngine
+import projects.kotlin.quizabfahrt.application.session.QuizSession
 import projects.kotlin.quizabfahrt.application.session.QuizSessionService
 import projects.kotlin.quizabfahrt.model.QuestionRef
 
@@ -17,12 +17,7 @@ data class BoardCell(val points: Int, val asked: Boolean, val openPath: String)
 class BoardController(private val questionService: QuestionService, private val sessions: QuizSessionService) {
 
     @GetMapping("/board/{board}")
-    fun board(
-        model: Model,
-        @PathVariable board: Int,
-        @CookieValue(SessionCookies.HOST, required = false) hostToken: String?,
-    ): String {
-        val session = sessions.requireHost(hostToken)
+    fun board(model: Model, @PathVariable board: Int, @HostSession session: QuizSession): String {
         val boardIndex = QuestionRef.getBoardIndex(board)
         val categories = questionService.getBoard(session, boardIndex).categories
         sessions.closeBuzzing(session)
@@ -43,14 +38,7 @@ class BoardController(private val questionService: QuestionService, private val 
     }
 
     @PostMapping("/board/{board}/category/{category}/question/{question}/open")
-    fun openQuestion(
-        @PathVariable board: Int,
-        @PathVariable category: Int,
-        @PathVariable question: Int,
-        @CookieValue(SessionCookies.HOST, required = false) hostToken: String?,
-    ): String {
-        val session = sessions.requireHost(hostToken)
-        val ref = QuestionRef.fromPath(board, category, question)
+    fun openQuestion(@HostSession session: QuizSession, ref: QuestionRef): String {
         questionService.getQuestion(session, ref)
         sessions.openQuestion(session, ref)
         return "redirect:${ref.toPath()}"

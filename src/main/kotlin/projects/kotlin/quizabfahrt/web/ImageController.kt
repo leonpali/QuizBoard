@@ -8,24 +8,23 @@ import org.springframework.http.MediaType
 import org.springframework.http.MediaTypeFactory
 import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Controller
-import org.springframework.web.bind.annotation.CookieValue
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import projects.kotlin.quizabfahrt.application.service.QuizService
-import projects.kotlin.quizabfahrt.application.session.QuizSessionService
+import projects.kotlin.quizabfahrt.application.session.QuizSession
 
 @Controller
-class ImageController(private val sessions: QuizSessionService) {
+class ImageController {
 
     @GetMapping("/images/{filename}")
     fun image(
         @PathVariable filename: String,
-        @CookieValue(SessionCookies.HOST, required = false) hostToken: String?,
+        @HostSession session: QuizSession?,
     ): ResponseEntity<Resource> {
         val name = QuizService.nfc(filename)
         if (!QuizService.isPlainFileName(name)) return ResponseEntity.notFound().build()
 
-        val uploaded = sessions.findByHostToken(hostToken)
+        val uploaded = session
             ?.let { FileSystemResource(it.imageDir.resolve(name)) }
             ?.takeIf { it.exists() }
         val resource = uploaded

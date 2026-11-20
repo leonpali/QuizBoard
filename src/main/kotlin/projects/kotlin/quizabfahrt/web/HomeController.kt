@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.multipart.MultipartFile
 import projects.kotlin.quizabfahrt.application.service.QuizService
+import projects.kotlin.quizabfahrt.application.session.QuizSession
 import projects.kotlin.quizabfahrt.application.session.QuizSessionException
 import projects.kotlin.quizabfahrt.application.session.QuizSessionService
 
@@ -19,10 +20,10 @@ class HomeController(private val quizService: QuizService, private val sessions:
     @GetMapping("/")
     fun home(
         model: Model,
-        @CookieValue(SessionCookies.HOST, required = false) hostToken: String?,
+        @HostSession hosted: QuizSession?,
         @CookieValue(SessionCookies.PLAYER, required = false) playerToken: String?,
     ): String {
-        model.addAttribute("hostedCode", sessions.findByHostToken(hostToken)?.code)
+        model.addAttribute("hostedCode", hosted?.code)
         model.addAttribute("joinedCode", sessions.findPlayer(playerToken)?.first?.code)
         model.addAttribute("bundledImages", quizService.bundledImages)
         model.addAttribute("imageAccept", QuizService.IMAGE_EXTENSIONS.joinToString(",") { ".$it" })
@@ -34,16 +35,16 @@ class HomeController(private val quizService: QuizService, private val sessions:
         model: Model,
         request: HttpServletRequest,
         response: HttpServletResponse,
-        @CookieValue(SessionCookies.HOST, required = false) hostToken: String?,
+        @HostSession hosted: QuizSession?,
         @CookieValue(SessionCookies.PLAYER, required = false) playerToken: String?,
         @RequestParam("boards", required = false) boards: List<MultipartFile>?,
         @RequestParam("images", required = false) images: List<MultipartFile>?,
     ): String {
         val session = try {
-            quizService.createQuiz(boards.orEmpty(), images.orEmpty(), hostToken)
+            quizService.createQuiz(boards.orEmpty(), images.orEmpty(), hosted?.hostToken)
         } catch (e: QuizSessionException) {
             model.addAttribute("errors", listOf(e.message))
-            return home(model, hostToken, playerToken)
+            return home(model, hosted, playerToken)
         }
 
         SessionCookies.set(request, response, SessionCookies.HOST, session.hostToken, session.expiresAt)

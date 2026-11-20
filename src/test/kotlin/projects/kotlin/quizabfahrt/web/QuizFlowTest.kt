@@ -227,6 +227,51 @@ class QuizFlowTest {
     }
 
     @Test
+    fun `lineup questions show their entries one by one, other types don't get the reveal button`() {
+        val lineup = String(boardFile("Board_1.txt", "Kat").bytes)
+            .replaceFirst("type: text\n    text: Kat Frage 1", "type: lineup\n    text: Erster, Zweiter ,Dritter")
+        val quiz = createQuiz(MockMultipartFile("boards", "Board_1.txt", "text/plain", lineup.toByteArray()))
+
+        val response = mockMvc.get("/board/1/category/1/question/1") { cookie(quiz.host) }.andReturn().response
+        val html = response.contentAsString
+        val entries = Regex("<p class=\"hidden\">([^<]*)</p>").findAll(html).map { it.groupValues[1] }.toList()
+        assertEquals(listOf("Erster", "Zweiter", "Dritter"), entries)
+        assertContains(html, "id=\"reveal-button\"")
+
+        val nonce = Regex("'nonce-([^']+)'").find(response.getHeader("Content-Security-Policy")!!)!!.groupValues[1]
+        assertContains(html, "<script nonce=\"$nonce\">")
+
+        assertFalse("reveal-button" in page("/board/1/category/1/question/2", quiz.host))
+    }
+
+    @Test
+    fun `answers show text, image or both depending on their type`() {
+        val board = String(boardFile("Board_1.txt", "Kat").bytes)
+            .replaceFirst("type: text\n        text: Kat Antwort 1\n        img: null", "type: img\n        text: null\n        img: a.png")
+            .replaceFirst("type: text\n        text: Kat Antwort 2\n        img: null", "type: textimage\n        text: Beides\n        img: b.png")
+        val quiz = createQuiz(MockMultipartFile("boards", "Board_1.txt", "text/plain", board.toByteArray()), image("a.png"), image("b.png"))
+
+        val imageOnly = page("/board/1/category/1/question/1/answer", quiz.host)
+        assertContains(imageOnly, "/images/a.png")
+        assertFalse("class=\"answer\"" in imageOnly)
+
+        val both = page("/board/1/category/1/question/2/answer", quiz.host)
+        assertContains(both, "/images/b.png")
+        assertContains(both, "Beides")
+
+        val textOnly = page("/board/1/category/1/question/3/answer", quiz.host)
+        assertContains(textOnly, "Kat Antwort 3")
+        assertFalse("answer-image" in textOnly)
+    }
+
+    @Test
+    fun `non-numeric addresses are rejected`() {
+        val quiz = createQuiz()
+        mockMvc.get("/board/1/category/x/question/1") { cookie(quiz.host) }.andExpect { status { isBadRequest() } }
+        mockMvc.post("/board/1/category/1/question/eins/open") { cookie(quiz.host) }.andExpect { status { isBadRequest() } }
+    }
+
+    @Test
     fun `board buttons link to their category and question, numbered from 1`() {
         val quiz = createQuiz(boardFile("Board_1.txt", "Eins", "Zwei"))
         val board = page("/board/1", quiz.host)

@@ -1,15 +1,14 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Answer</title>
+    <title>Antwort</title>
     <link rel="stylesheet" th:href="@{/css/answer.css}">
 </head>
 <body>
     <div class="center-wrapper">
         <div class="answer-block">
-            <img class="answer-image" th:src="@{'/images/' + ${question.getAnswerImg()}}" alt="">
-            <p class="answer" th:text="${question.getAnswerText()}"></p>
+            <div th:replace="~{answers/__${question.getAnswerTypeKey()}__ :: content}"></div>
             <form th:action="@{${nextUrl}}" method="get">
                 <button class="continue-button">Weiter</button>
             </form>

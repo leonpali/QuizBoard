@@ -104,14 +104,12 @@ class BoardEditorService(private val compiler: CompilationEngine) {
         draft.getCategory(categoryIndex).questions.remove(draft.getQuestion(categoryIndex, questionIndex))
     }
 
-    fun updateQuestion(
-        draft: BoardDraft, categoryIndex: Int, questionIndex: Int,
-        type: EQuestionTypes, text: String?, img: String?, points: String,
-    ) = change(draft) {
+    fun updateQuestion(draft: BoardDraft, categoryIndex: Int, questionIndex: Int, input: QuestionInput) = change(draft) {
         val question = draft.getQuestion(categoryIndex, questionIndex)
-        val cleanText = clean(text, "Der Text", MAX_TEXT_LENGTH)
-        val cleanImg = cleanImageName(img)
-        val cleanPoints = points.trim().toIntOrNull()?.takeIf { it in 0..MAX_POINTS }
+        val type = input.type
+        val cleanText = clean(input.text, "Der Text", MAX_TEXT_LENGTH)
+        val cleanImg = cleanImageName(input.img)
+        val cleanPoints = input.points.trim().toIntOrNull()?.takeIf { it in 0..MAX_POINTS }
             ?: throw BoardEditorException("Die Punkte müssen eine ganze Zahl zwischen 0 und $MAX_POINTS sein.")
 
         if (type != EQuestionTypes.IMAGE && cleanText == null) throw BoardEditorException("Diese Frage braucht einen Text.")
@@ -123,13 +121,11 @@ class BoardEditorService(private val compiler: CompilationEngine) {
         question.points = cleanPoints
     }
 
-    fun updateAnswer(
-        draft: BoardDraft, categoryIndex: Int, questionIndex: Int,
-        type: EAnswerTypes, text: String?, img: String?,
-    ) = change(draft) {
+    fun updateAnswer(draft: BoardDraft, categoryIndex: Int, questionIndex: Int, input: AnswerInput) = change(draft) {
         val question = draft.getQuestion(categoryIndex, questionIndex)
-        val cleanText = clean(text, "Der Text", MAX_TEXT_LENGTH)
-        val cleanImg = cleanImageName(img)
+        val type = input.type
+        val cleanText = clean(input.text, "Der Text", MAX_TEXT_LENGTH)
+        val cleanImg = cleanImageName(input.img)
 
         if (type != EAnswerTypes.IMAGE && cleanText == null) throw BoardEditorException("Diese Antwort braucht einen Text.")
         if (type != EAnswerTypes.TEXT && cleanImg == null) throw BoardEditorException("Diese Antwort braucht einen Bildnamen.")

@@ -21,23 +21,23 @@
                 <label class="field">
                     <span class="field-title">Typ</span>
                     <select class="text-input" name="type">
-                        <option value="TEXT" th:selected="${type.name() == 'TEXT'}">Text</option>
-                        <option value="IMAGE" th:selected="${type.name() == 'IMAGE'}">Bild</option>
-                        <option value="TEXTIMAGE" th:selected="${type.name() == 'TEXTIMAGE'}">Bild und Text</option>
+                        <option value="TEXT" th:selected="${form.isType('TEXT')}">Text</option>
+                        <option value="IMAGE" th:selected="${form.isType('IMAGE')}">Bild</option>
+                        <option value="TEXTIMAGE" th:selected="${form.isType('TEXTIMAGE')}">Bild und Text</option>
                     </select>
                 </label>
 
                 <label class="field">
                     <span class="field-title">Text</span>
                     <span class="field-hint">Für Text- und Bild-und-Text-Antworten</span>
-                    <textarea class="text-input" name="text" rows="4" maxlength="1000" th:text="${text}"></textarea>
+                    <textarea class="text-input" name="text" rows="4" maxlength="1000" th:text="${form.text}"></textarea>
                 </label>
 
                 <label class="field">
                     <span class="field-title">Bildname</span>
                     <span class="field-hint">Für Bild- und Bild-und-Text-Antworten, z. B. <code>koeln.jpg</code></span>
                     <span class="field-hint">Erlaubte Formate: jpg, jpeg, png, gif, webp, avif, bmp</span>
-                    <input class="text-input" type="text" name="img" th:value="${img}" maxlength="100">
+                    <input class="text-input" type="text" name="img" th:value="${form.img}" maxlength="100">
                 </label>
 
                 <div class="form-actions">

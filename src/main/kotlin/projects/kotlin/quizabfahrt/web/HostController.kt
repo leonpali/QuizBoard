@@ -6,11 +6,11 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
-import org.springframework.web.bind.annotation.CookieValue
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder
+import projects.kotlin.quizabfahrt.application.session.QuizSession
 import projects.kotlin.quizabfahrt.application.session.QuizSessionService
 import projects.kotlin.quizabfahrt.application.session.RankedPlayer
 
@@ -20,8 +20,7 @@ data class PodiumStep(val place: Int, val players: List<RankedPlayer>)
 class HostController(private val sessions: QuizSessionService, private val broadcaster: QuizEventBroadcaster) {
 
     @GetMapping("/host")
-    fun lobby(model: Model, @CookieValue(SessionCookies.HOST, required = false) hostToken: String?): String {
-        val session = sessions.requireHost(hostToken)
+    fun lobby(model: Model, @HostSession session: QuizSession): String {
         sessions.closeBuzzing(session)
 
         model.addAttribute("code", session.code)
@@ -32,8 +31,7 @@ class HostController(private val sessions: QuizSessionService, private val broad
     }
 
     @GetMapping("/host/scoreboard")
-    fun scoreboard(model: Model, @CookieValue(SessionCookies.HOST, required = false) hostToken: String?): String {
-        val session = sessions.requireHost(hostToken)
+    fun scoreboard(model: Model, @HostSession session: QuizSession): String {
         sessions.closeBuzzing(session)
         val ranking = session.getRanking()
 
@@ -46,8 +44,8 @@ class HostController(private val sessions: QuizSessionService, private val broad
     }
 
     @GetMapping("/host/events")
-    fun events(@CookieValue(SessionCookies.HOST, required = false) hostToken: String?): ResponseEntity<SseEmitter> {
-        val session = sessions.findByHostToken(hostToken) ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
+    fun events(@HostSession session: QuizSession?): ResponseEntity<SseEmitter> {
+        if (session == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
         return sseResponse(broadcaster.subscribeHost(session))
     }
 
@@ -55,9 +53,9 @@ class HostController(private val sessions: QuizSessionService, private val broad
     fun end(
         request: HttpServletRequest,
         response: HttpServletResponse,
-        @CookieValue(SessionCookies.HOST, required = false) hostToken: String?,
+        @HostSession session: QuizSession?,
     ): String {
-        sessions.findByHostToken(hostToken)?.let(sessions::end)
+        session?.let(sessions::end)
         SessionCookies.clear(request, response, SessionCookies.HOST)
         return "redirect:/"
     }

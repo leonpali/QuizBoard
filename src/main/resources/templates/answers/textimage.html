@@ -1,0 +1,9 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<body>
+    <div th:fragment="content">
+        <img class="answer-image" th:src="@{'/images/' + ${question.getAnswerImg()}}" alt="">
+        <p class="answer" th:text="${question.getAnswerText()}">Antworttext</p>
+    </div>
+</body>
+</html>

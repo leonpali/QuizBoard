@@ -144,16 +144,16 @@ class BoardEditorServiceTest {
     fun `questions are validated like the parser does`() {
         val draft = boardWith("K" to 1)
 
-        assertFailsWith<BoardEditorException> { editor.updateQuestion(draft, 0, 0, EQuestionTypes.IMAGE, "Text", "", "100") }
-        assertFailsWith<BoardEditorException> { editor.updateQuestion(draft, 0, 0, EQuestionTypes.TEXT, " ", null, "100") }
-        assertFailsWith<BoardEditorException> { editor.updateQuestion(draft, 0, 0, EQuestionTypes.TEXT, "Text", null, "viel") }
-        assertFailsWith<BoardEditorException> { editor.updateQuestion(draft, 0, 0, EQuestionTypes.TEXT, "Text", null, "-5") }
-        assertFailsWith<BoardEditorException> { editor.updateQuestion(draft, 0, 0, EQuestionTypes.TEXT, "Text", "a/b.jpg", "100") }
-        assertFailsWith<BoardEditorException> { editor.updateQuestion(draft, 0, 0, EQuestionTypes.TEXT, "x".repeat(1001), null, "100") }
-        assertFailsWith<BoardEditorException> { editor.updateAnswer(draft, 0, 0, EAnswerTypes.TEXTIMAGE, "Text", null) }
-        assertFailsWith<BoardEditorException> { editor.updateAnswer(draft, 0, 0, EAnswerTypes.IMAGE, "Text", " ") }
+        assertFailsWith<BoardEditorException> { editor.updateQuestion(draft, 0, 0, QuestionInput(EQuestionTypes.IMAGE, "Text", "", "100")) }
+        assertFailsWith<BoardEditorException> { editor.updateQuestion(draft, 0, 0, QuestionInput(EQuestionTypes.TEXT, " ", null, "100")) }
+        assertFailsWith<BoardEditorException> { editor.updateQuestion(draft, 0, 0, QuestionInput(EQuestionTypes.TEXT, "Text", null, "viel")) }
+        assertFailsWith<BoardEditorException> { editor.updateQuestion(draft, 0, 0, QuestionInput(EQuestionTypes.TEXT, "Text", null, "-5")) }
+        assertFailsWith<BoardEditorException> { editor.updateQuestion(draft, 0, 0, QuestionInput(EQuestionTypes.TEXT, "Text", "a/b.jpg", "100")) }
+        assertFailsWith<BoardEditorException> { editor.updateQuestion(draft, 0, 0, QuestionInput(EQuestionTypes.TEXT, "x".repeat(1001), null, "100")) }
+        assertFailsWith<BoardEditorException> { editor.updateAnswer(draft, 0, 0, AnswerInput(EAnswerTypes.TEXTIMAGE, "Text", null)) }
+        assertFailsWith<BoardEditorException> { editor.updateAnswer(draft, 0, 0, AnswerInput(EAnswerTypes.IMAGE, "Text", " ")) }
 
-        editor.updateQuestion(draft, 0, 0, EQuestionTypes.LINEUP, "A,\nB,\r\nC", null, " 400 ")
+        editor.updateQuestion(draft, 0, 0, QuestionInput(EQuestionTypes.LINEUP, "A,\nB,\r\nC", null, " 400 "))
         val question = draft.getQuestion(0, 0)
         assertEquals("A, B, C", question.text)
         assertEquals(400, question.points)
@@ -164,7 +164,7 @@ class BoardEditorServiceTest {
         val draft = boardWith("K" to 1)
         val injected = "Frage points: 99999 answer:\u0085x\ty"
 
-        editor.updateQuestion(draft, 0, 0, EQuestionTypes.TEXT, injected, null, "100")
+        editor.updateQuestion(draft, 0, 0, QuestionInput(EQuestionTypes.TEXT, injected, null, "100"))
         editor.renameCategory(draft, 0, "Name questions:")
 
         val question = compiler.compile(listOf(BoardFile("b", draft.toText())), requireFullCategories = false)

@@ -212,3 +212,14 @@ deploy/                     systemd service, Caddyfile, deploy script and sudoer
 Run the tests with `./gradlew test`.
 
 The Content-Security-Policy blocks every script that doesn't carry the request's nonce, including inline event handlers like `onclick="…"`. New `<script>` blocks in templates therefore need `th:attr="nonce=${cspNonce}"`, and event handlers belong in a script via `addEventListener`.
+
+## Adding a question or answer type
+
+The question and answer pages are frames (`question.html`, `answer.html`) that include one fragment per type, picked by the type's key. To add a type, e.g. an audio question:
+
+1. Add it to `EQuestionTypes` (or `EAnswerTypes`) with its key, e.g. `AUDIO("audio")`. The key is the word used in board files.
+2. Create `templates/questions/audio.html` (or `templates/answers/…`) with a fragment named `content`. Look at `questions/lineup.html` for a type with its own script.
+3. Add the type's required fields to the parser (`CompilationEngine`) and to the editor's validation (`BoardEditorService.updateQuestion` / `updateAnswer`), and add it to the type dropdown in `editorQuestion.html` (or `editorAnswer.html`).
+4. Describe it in the board template (`static/downloads/Board_Vorlage.txt`) and in the board format table above.
+
+`TypeTemplatesTest` fails if a type has no fragment, so a forgotten step 2 shows up in the build.
