@@ -22,9 +22,11 @@ class CompilationEngine {
     private var currentToken = ""
     private var currentQuestionId = 0
     private var currentCategoryId = 0
+    private var requireFullCategories = true
 
     @Synchronized
-    fun compile(files: List<BoardFile>): List<Board> {
+    fun compile(files: List<BoardFile>, requireFullCategories: Boolean = true): List<Board> {
+        this.requireFullCategories = requireFullCategories
         val boards = LinkedList<Board>()
         for (f: BoardFile in files) {
             currentFileName = f.name
@@ -68,7 +70,7 @@ class CompilationEngine {
         while (currentToken != "__EOF__") {
             categories.add(compileCategory())
         }
-        if (categories.isEmpty()) error("Datei enthält keine Kategorien")
+        if (categories.isEmpty() && requireFullCategories) error("Datei enthält keine Kategorien")
         return Board(id, categories)
     }
 
@@ -90,7 +92,7 @@ class CompilationEngine {
             questions.add(compileQuestion())
         }
 
-        if (questions.size != QUESTIONS_PER_CATEGORY) {
+        if (requireFullCategories && questions.size != QUESTIONS_PER_CATEGORY) {
             error("Kategorie '$name' hat ${questions.size} Fragen, erwartet werden $QUESTIONS_PER_CATEGORY")
         }
         return Category(id, name, questions)
@@ -102,12 +104,9 @@ class CompilationEngine {
         if (!currentToken.startsWith("question")) error("'question_N:' erwartet, gefunden: '$currentToken'")
         advanceToken()
 
-        val type = when (val typeString = value("type")) {
-            "text" -> EQuestionTypes.TEXT
-            "img" -> EQuestionTypes.IMAGE
-            "lineup" -> EQuestionTypes.LINEUP
-            else -> error("Unbekannter Fragetyp '$typeString' (erlaubt: text, img, lineup)")
-        }
+        val typeString = value("type")
+        val type = EQuestionTypes.entries.firstOrNull { it.key == typeString }
+            ?: error("Unbekannter Fragetyp '$typeString' (erlaubt: ${EQuestionTypes.entries.joinToString { it.key }})")
         advanceToken()
 
         val text = value("text")
@@ -133,12 +132,9 @@ class CompilationEngine {
         if (!currentToken.startsWith("answer")) error("'answer:' erwartet, gefunden: '$currentToken'")
         advanceToken()
 
-        val type = when (val typeString = value("type")) {
-            "text" -> EAnswerTypes.TEXT
-            "img" -> EAnswerTypes.IMAGE
-            "textimage" -> EAnswerTypes.TEXTIMAGE
-            else -> error("Unbekannter Antworttyp '$typeString' (erlaubt: text, img, textimage)")
-        }
+        val typeString = value("type")
+        val type = EAnswerTypes.entries.firstOrNull { it.key == typeString }
+            ?: error("Unbekannter Antworttyp '$typeString' (erlaubt: ${EAnswerTypes.entries.joinToString { it.key }})")
         advanceToken()
 
         val text = value("text")

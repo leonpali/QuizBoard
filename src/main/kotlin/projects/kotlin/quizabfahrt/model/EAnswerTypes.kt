@@ -1,7 +1,7 @@
 package projects.kotlin.quizabfahrt.model
 
-enum class EAnswerTypes {
-    TEXT,
-    IMAGE,
-    TEXTIMAGE
+enum class EAnswerTypes(val key: String) {
+    TEXT("text"),
+    IMAGE("img"),
+    TEXTIMAGE("textimage")
 }
