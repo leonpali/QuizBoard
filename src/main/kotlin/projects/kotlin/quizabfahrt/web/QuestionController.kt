@@ -8,28 +8,31 @@ import org.springframework.web.bind.annotation.PathVariable
 import projects.kotlin.quizabfahrt.application.service.QuestionService
 import projects.kotlin.quizabfahrt.application.session.QuizSessionService
 import projects.kotlin.quizabfahrt.model.EQuestionTypes
+import projects.kotlin.quizabfahrt.model.QuestionRef
 
 @Controller
 class QuestionController(private val questionService: QuestionService, private val sessions: QuizSessionService) {
 
-    @GetMapping("/board/{id}/question/{questionId}")
+    @GetMapping("/board/{board}/category/{category}/question/{question}")
     fun question(
         model: Model,
-        @PathVariable id: Int,
-        @PathVariable questionId: Int,
+        @PathVariable board: Int,
+        @PathVariable category: Int,
+        @PathVariable question: Int,
         @CookieValue(SessionCookies.HOST, required = false) hostToken: String?,
     ): String {
         val session = sessions.requireHost(hostToken)
-        val question = questionService.getQuestion(session, id-1, questionId)
-        model.addAttribute("question", question)
-        model.addAttribute("boardId", id)
+        val ref = QuestionRef.fromPath(board, category, question)
+        val current = questionService.getQuestion(session, ref)
+        model.addAttribute("question", current)
+        model.addAttribute("ref", ref)
 
-        if (question.type == EQuestionTypes.LINEUP) {
-            val lineUp = question.text?.split(",")?.toList()
+        if (current.type == EQuestionTypes.LINEUP) {
+            val lineUp = current.text?.split(",")?.toList()
             model.addAttribute("lineUp", lineUp)
         }
 
-        return when (question.type) {
+        return when (current.type) {
             EQuestionTypes.TEXT -> "textQuestion"
             EQuestionTypes.IMAGE -> "imageQuestion"
             EQuestionTypes.LINEUP -> "lineUpQuestion"

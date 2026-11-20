@@ -6,6 +6,7 @@ import org.springframework.context.ApplicationEventPublisher
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import projects.kotlin.quizabfahrt.model.Board
+import projects.kotlin.quizabfahrt.model.QuestionRef
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -112,9 +113,9 @@ class QuizSessionService(
         return session to player
     }
 
-    fun openQuestion(session: QuizSession, boardIndex: Int, questionId: Int) {
+    fun openQuestion(session: QuizSession, ref: QuestionRef) {
         synchronized(session) {
-            session.currentQuestion = QuizSession.questionKey(boardIndex, questionId)
+            session.currentQuestion = ref
             session.buzzingOpen = true
         }
         events.publishEvent(SessionChangedEvent(session))
@@ -140,10 +141,10 @@ class QuizSessionService(
         return playerState(session, player)
     }
 
-    fun toggleResult(session: QuizSession, boardIndex: Int, questionId: Int, playerId: Int, outcome: Outcome, points: Int) {
+    fun toggleResult(session: QuizSession, ref: QuestionRef, playerId: Int, outcome: Outcome, points: Int) {
         synchronized(session) {
             if (session.players.values.none { it.id == playerId }) throw QuizSessionException("Unbekannter Teilnehmer.")
-            val results = session.results.getOrPut(QuizSession.questionKey(boardIndex, questionId)) { HashMap() }
+            val results = session.results.getOrPut(ref) { HashMap() }
             if (results[playerId]?.outcome == outcome) {
                 results.remove(playerId)
             } else {
@@ -154,10 +155,9 @@ class QuizSessionService(
         events.publishEvent(SessionChangedEvent(session))
     }
 
-    fun scoringRows(session: QuizSession, boardIndex: Int, questionId: Int): List<ScoringRow> = synchronized(session) {
-        val key = QuizSession.questionKey(boardIndex, questionId)
-        val buzzOrder = session.buzzes[key].orEmpty()
-        val results = session.results[key].orEmpty()
+    fun scoringRows(session: QuizSession, ref: QuestionRef): List<ScoringRow> = synchronized(session) {
+        val buzzOrder = session.buzzes[ref].orEmpty()
+        val results = session.results[ref].orEmpty()
         (buzzOrder + session.players.values.filter { it !in buzzOrder }).map { player ->
             ScoringRow(
                 playerId = player.id,

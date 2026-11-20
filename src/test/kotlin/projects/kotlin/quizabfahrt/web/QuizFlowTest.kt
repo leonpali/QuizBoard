@@ -91,15 +91,18 @@ class QuizFlowTest {
     private fun buzz(player: Cookie): String =
         mockMvc.post("/play/buzz") { cookie(player) }.andExpect { status { isOk() } }.andReturn().response.contentAsString
 
-    private fun openQuestion(quiz: Quiz, questionId: Int) {
-        mockMvc.post("/board/0/$questionId") { cookie(quiz.host) }
-            .andExpect { redirectedUrl("/board/1/question/$questionId") }
+    // Question n (1-based) of the first category on the first board
+    private fun q(n: Int) = "/board/1/category/1/question/$n"
+
+    private fun openQuestion(quiz: Quiz, question: Int) {
+        mockMvc.post("${q(question)}/open") { cookie(quiz.host) }
+            .andExpect { redirectedUrl(q(question)) }
     }
 
-    private fun score(quiz: Quiz, questionId: Int, playerId: Int, outcome: String) {
-        mockMvc.post("/board/1/question/$questionId/score") {
+    private fun score(quiz: Quiz, question: Int, playerId: Int, outcome: String) {
+        mockMvc.post("${q(question)}/score") {
             cookie(quiz.host); param("playerId", "$playerId"); param("outcome", outcome)
-        }.andExpect { redirectedUrl("/board/1/question/$questionId/score") }
+        }.andExpect { redirectedUrl("${q(question)}/score") }
     }
 
     // Creating a quiz
@@ -194,12 +197,12 @@ class QuizFlowTest {
 
         assertContains(buzz(anna), "\"buzzed\":false")
 
-        openQuestion(quiz, 2)
+        openQuestion(quiz, 3)
         assertContains(buzz(ben), "\"position\":1")
         assertContains(buzz(anna), "\"position\":2")
         assertContains(buzz(ben), "\"position\":1")
 
-        page("/board/1/question/2/answer", quiz.host)
+        page("/board/1/category/1/question/3/answer", quiz.host)
         assertContains(buzz(anna), "\"buzzingOpen\":false")
     }
 
@@ -208,7 +211,7 @@ class QuizFlowTest {
         val quiz = createQuiz()
         assertFalse("disabled=\"disabled\"" in page("/board/1", quiz.host))
 
-        openQuestion(quiz, 3)
+        openQuestion(quiz, 4)
 
         assertEquals(1, Regex("disabled=\"disabled\"").findAll(page("/board/1", quiz.host)).count())
     }
@@ -217,10 +220,34 @@ class QuizFlowTest {
     fun `question and answer pages render for every type`() {
         val quiz = createQuiz(boardFile("Board_1.txt", "Kat", image = "bild.png"), image("bild.png"))
 
-        openQuestion(quiz, 0)
-        assertContains(page("/board/1/question/0", quiz.host), "/images/bild.png")
-        assertContains(page("/board/1/question/1", quiz.host), "Kat Frage 2")
-        assertContains(page("/board/1/question/1/answer", quiz.host), "Kat Antwort 2")
+        openQuestion(quiz, 1)
+        assertContains(page("/board/1/category/1/question/1", quiz.host), "/images/bild.png")
+        assertContains(page("/board/1/category/1/question/2", quiz.host), "Kat Frage 2")
+        assertContains(page("/board/1/category/1/question/2/answer", quiz.host), "Kat Antwort 2")
+    }
+
+    @Test
+    fun `board buttons link to their category and question, numbered from 1`() {
+        val quiz = createQuiz(boardFile("Board_1.txt", "Eins", "Zwei"))
+        val board = page("/board/1", quiz.host)
+
+        assertContains(board, "action=\"/board/1/category/1/question/1/open\"")
+        assertContains(board, "action=\"/board/1/category/2/question/6/open\"")
+
+        mockMvc.post("/board/1/category/2/question/3/open") { cookie(quiz.host) }
+            .andExpect { redirectedUrl("/board/1/category/2/question/3") }
+        assertContains(page("/board/1/category/2/question/3", quiz.host), "Zwei Frage 3")
+        assertContains(page("/board/1/category/2/question/3/answer", quiz.host), "Zwei Antwort 3")
+    }
+
+    @Test
+    fun `addresses outside the board are not found`() {
+        val quiz = createQuiz()
+
+        listOf("/board/0", "/board/2", "/board/1/category/0/question/1", "/board/1/category/2/question/1",
+            "/board/1/category/1/question/0", "/board/1/category/1/question/7", "/board/1/category/1/question/7/answer")
+            .forEach { path -> mockMvc.get(path) { cookie(quiz.host) }.andExpect { status { isNotFound() } } }
+        mockMvc.post("/board/1/category/1/question/7/open") { cookie(quiz.host) }.andExpect { status { isNotFound() } }
     }
 
     // Scoring
@@ -228,10 +255,10 @@ class QuizFlowTest {
     @Test
     fun `without participants the answer leads back to the board, with them to scoring`() {
         val quiz = createQuiz()
-        assertContains(page("/board/1/question/0/answer", quiz.host), "action=\"/board/1\"")
+        assertContains(page("/board/1/category/1/question/1/answer", quiz.host), "action=\"/board/1\"")
 
         join(quiz, "Anna")
-        assertContains(page("/board/1/question/0/answer", quiz.host), "action=\"/board/1/question/0/score\"")
+        assertContains(page("/board/1/category/1/question/1/answer", quiz.host), "action=\"/board/1/category/1/question/1/score\"")
     }
 
     @Test
@@ -239,19 +266,19 @@ class QuizFlowTest {
         val quiz = createQuiz()
         val anna = join(quiz, "Anna")
         join(quiz, "Ben")
-        openQuestion(quiz, 2)
+        openQuestion(quiz, 3)
         buzz(anna)
 
-        val rows = page("/board/1/question/2/score", quiz.host)
+        val rows = page("/board/1/category/1/question/3/score", quiz.host)
         assertTrue(rows.indexOf("Anna") < rows.indexOf("Ben"))
 
-        score(quiz, 2, playerId = 1, outcome = "CORRECT")
-        score(quiz, 2, playerId = 2, outcome = "WRONG")
+        score(quiz, 3, playerId = 1, outcome = "CORRECT")
+        score(quiz, 3, playerId = 2, outcome = "WRONG")
         assertContains(buzz(anna), "\"score\":300")
-        val totals = Regex("class=\"total\">(-?\\d+)").findAll(page("/board/1/question/2/score", quiz.host)).map { it.groupValues[1] }.toList()
+        val totals = Regex("class=\"total\">(-?\\d+)").findAll(page("/board/1/category/1/question/3/score", quiz.host)).map { it.groupValues[1] }.toList()
         assertEquals(listOf("300", "-150"), totals)
 
-        score(quiz, 2, playerId = 1, outcome = "CORRECT")
+        score(quiz, 3, playerId = 1, outcome = "CORRECT")
         assertContains(buzz(anna), "\"score\":0")
     }
 
@@ -259,8 +286,8 @@ class QuizFlowTest {
     fun `scoring an unknown participant changes nothing`() {
         val quiz = createQuiz()
         join(quiz, "Anna")
-        score(quiz, 0, playerId = 99, outcome = "CORRECT")
-        mockMvc.post("/board/1/question/0/score") { cookie(quiz.host); param("playerId", "1"); param("outcome", "MAYBE") }
+        score(quiz, 1, playerId = 99, outcome = "CORRECT")
+        mockMvc.post("/board/1/category/1/question/1/score") { cookie(quiz.host); param("playerId", "1"); param("outcome", "MAYBE") }
             .andExpect { status { isBadRequest() } }
     }
 
@@ -279,8 +306,8 @@ class QuizFlowTest {
     fun `the scoreboard shares places on ties and skips the next ones`() {
         val quiz = createQuiz()
         listOf("Anna", "Ben", "Cem").forEach { join(quiz, it) }
-        score(quiz, 2, playerId = 1, outcome = "CORRECT")
-        score(quiz, 2, playerId = 2, outcome = "CORRECT")
+        score(quiz, 3, playerId = 1, outcome = "CORRECT")
+        score(quiz, 3, playerId = 2, outcome = "CORRECT")
 
         val html = page("/host/scoreboard", quiz.host)
         val steps = Regex("place-(\\d)").findAll(html).map { it.groupValues[1] }.toList()
@@ -308,9 +335,9 @@ class QuizFlowTest {
         val quiz = createQuiz(boardFile("Board_1.txt", "Kat", image = "bild.png"), image("bild.png"))
         val anna = join(quiz, "Anna")
 
-        listOf("/host", "/board/1", "/board/1/question/0", "/board/1/question/0/answer", "/board/1/question/0/score", "/host/scoreboard")
+        listOf("/host", "/board/1", "/board/1/category/1/question/1", "/board/1/category/1/question/1/answer", "/board/1/category/1/question/1/score", "/host/scoreboard")
             .forEach { path -> mockMvc.get(path) { cookie(anna) }.andExpect { redirectedUrl("/") } }
-        mockMvc.post("/board/0/0") { cookie(anna) }.andExpect { redirectedUrl("/") }
+        mockMvc.post("${q(1)}/open") { cookie(anna) }.andExpect { redirectedUrl("/") }
         mockMvc.get("/images/bild.png") { cookie(anna) }.andExpect { status { isNotFound() } }
         mockMvc.get("/images/bild.png").andExpect { status { isNotFound() } }
     }

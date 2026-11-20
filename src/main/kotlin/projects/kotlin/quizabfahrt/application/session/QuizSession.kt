@@ -1,6 +1,7 @@
 package projects.kotlin.quizabfahrt.application.session
 
 import projects.kotlin.quizabfahrt.model.Board
+import projects.kotlin.quizabfahrt.model.QuestionRef
 import java.nio.file.Path
 import java.time.Instant
 
@@ -19,13 +20,13 @@ class QuizSession(
 ) {
     val players = LinkedHashMap<String, Player>()
 
-    var currentQuestion: String? = null
+    var currentQuestion: QuestionRef? = null
 
     var buzzingOpen = false
 
-    val buzzes = HashMap<String, MutableList<Player>>()
+    val buzzes = HashMap<QuestionRef, MutableList<Player>>()
 
-    val results = HashMap<String, HashMap<Int, QuestionResult>>()
+    val results = HashMap<QuestionRef, HashMap<Int, QuestionResult>>()
 
     var nextPlayerId = 1
 
@@ -40,10 +41,6 @@ class QuizSession(
         return sorted.map { player ->
             RankedPlayer(sorted.indexOfFirst { it.score == player.score } + 1, player.name, player.score)
         }
-    }
-
-    companion object {
-        fun questionKey(boardIndex: Int, questionId: Int) = "$boardIndex:$questionId"
     }
 }
 

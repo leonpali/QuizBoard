@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.springframework.context.ApplicationEventPublisher
 import projects.kotlin.quizabfahrt.model.Board
+import projects.kotlin.quizabfahrt.model.QuestionRef
 import java.nio.file.Path
 import java.time.Duration
 import kotlin.test.assertEquals
@@ -87,7 +88,7 @@ class QuizSessionServiceTest {
 
         assertFalse(service.buzz(session, anna).buzzed)
 
-        service.openQuestion(session, 0, 3)
+        service.openQuestion(session, QuestionRef(0, 0, 3))
         assertEquals(1, service.buzz(session, anna).position)
 
         service.closeBuzzing(session)
@@ -101,13 +102,13 @@ class QuizSessionServiceTest {
         val (_, anna) = service.join(session.code, "Anna", "1.1.1.1", null)
         val (_, ben) = service.join(session.code, "Ben", "1.1.1.1", null)
 
-        service.openQuestion(session, 0, 0)
+        service.openQuestion(session, QuestionRef(0, 0, 0))
         service.buzz(session, ben)
         service.buzz(session, anna)
         service.buzz(session, ben)
         assertEquals(listOf("Ben", "Anna"), service.hostState(session).buzzes)
 
-        service.openQuestion(session, 0, 1)
+        service.openQuestion(session, QuestionRef(0, 0, 1))
         assertEquals(emptyList(), service.hostState(session).buzzes)
         assertEquals(1, service.buzz(session, anna).position)
     }
@@ -133,9 +134,9 @@ class QuizSessionServiceTest {
         val (_, anna) = service.join(session.code, "Anna", "1.1.1.1", null)
         val (_, ben) = service.join(session.code, "Ben", "1.1.1.1", null)
 
-        service.toggleResult(session, 0, 0, anna.id, Outcome.WRONG, 300)
-        service.toggleResult(session, 0, 0, ben.id, Outcome.CORRECT, 300)
-        service.toggleResult(session, 0, 1, anna.id, Outcome.CORRECT, 500)
+        service.toggleResult(session, QuestionRef(0, 0, 0), anna.id, Outcome.WRONG, 300)
+        service.toggleResult(session, QuestionRef(0, 0, 0), ben.id, Outcome.CORRECT, 300)
+        service.toggleResult(session, QuestionRef(0, 0, 1), anna.id, Outcome.CORRECT, 500)
 
         assertEquals(350, service.playerState(session, anna).score)
         assertEquals(300, service.playerState(session, ben).score)
@@ -147,8 +148,8 @@ class QuizSessionServiceTest {
         val (_, anna) = service.join(session.code, "Anna", "1.1.1.1", null)
         val (_, ben) = service.join(session.code, "Ben", "1.1.1.1", null)
 
-        service.toggleResult(session, 0, 0, anna.id, Outcome.CORRECT, 200)
-        service.toggleResult(session, 0, 0, ben.id, Outcome.CORRECT, 200)
+        service.toggleResult(session, QuestionRef(0, 0, 0), anna.id, Outcome.CORRECT, 200)
+        service.toggleResult(session, QuestionRef(0, 0, 0), ben.id, Outcome.CORRECT, 200)
 
         assertEquals(200, service.playerState(session, anna).score)
         assertEquals(200, service.playerState(session, ben).score)
@@ -158,13 +159,13 @@ class QuizSessionServiceTest {
     fun `choosing the same outcome again removes it, choosing the other one replaces it`() {
         val (_, anna) = service.join(session.code, "Anna", "1.1.1.1", null)
 
-        service.toggleResult(session, 0, 0, anna.id, Outcome.CORRECT, 400)
-        service.toggleResult(session, 0, 0, anna.id, Outcome.WRONG, 400)
+        service.toggleResult(session, QuestionRef(0, 0, 0), anna.id, Outcome.CORRECT, 400)
+        service.toggleResult(session, QuestionRef(0, 0, 0), anna.id, Outcome.WRONG, 400)
         assertEquals(-200, service.playerState(session, anna).score)
 
-        service.toggleResult(session, 0, 0, anna.id, Outcome.WRONG, 400)
+        service.toggleResult(session, QuestionRef(0, 0, 0), anna.id, Outcome.WRONG, 400)
         assertEquals(0, service.playerState(session, anna).score)
-        assertNull(service.scoringRows(session, 0, 0).single().outcome)
+        assertNull(service.scoringRows(session, QuestionRef(0, 0, 0)).single().outcome)
     }
 
     @Test
@@ -173,12 +174,12 @@ class QuizSessionServiceTest {
         val (_, ben) = service.join(session.code, "Ben", "1.1.1.1", null)
         val (_, cem) = service.join(session.code, "Cem", "1.1.1.1", null)
 
-        service.openQuestion(session, 0, 2)
+        service.openQuestion(session, QuestionRef(0, 0, 2))
         service.buzz(session, cem)
         service.buzz(session, ben)
-        service.toggleResult(session, 0, 2, ben.id, Outcome.CORRECT, 100)
+        service.toggleResult(session, QuestionRef(0, 0, 2), ben.id, Outcome.CORRECT, 100)
 
-        val rows = service.scoringRows(session, 0, 2)
+        val rows = service.scoringRows(session, QuestionRef(0, 0, 2))
         assertEquals(listOf("Cem", "Ben", "Anna"), rows.map { it.name })
         assertEquals(listOf(1, 2, null), rows.map { it.buzzPosition })
         assertEquals(listOf(null, Outcome.CORRECT, null), rows.map { it.outcome })
@@ -195,7 +196,7 @@ class QuizSessionServiceTest {
 
     private fun joinWithScore(name: String, points: Int) {
         val (_, player) = service.join(session.code, name, "1.1.1.1", null)
-        if (points != 0) service.toggleResult(session, 0, player.id, player.id, Outcome.CORRECT, points)
+        if (points != 0) service.toggleResult(session, QuestionRef(0, 0, player.id), player.id, Outcome.CORRECT, points)
     }
 
     @Test
@@ -239,6 +240,6 @@ class QuizSessionServiceTest {
 
     @Test
     fun `results for unknown participants are rejected`() {
-        assertFailsWith<QuizSessionException> { service.toggleResult(session, 0, 0, 42, Outcome.CORRECT, 100) }
+        assertFailsWith<QuizSessionException> { service.toggleResult(session, QuestionRef(0, 0, 0), 42, Outcome.CORRECT, 100) }
     }
 }

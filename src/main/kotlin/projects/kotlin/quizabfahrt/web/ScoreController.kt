@@ -11,42 +11,47 @@ import projects.kotlin.quizabfahrt.application.service.QuestionService
 import projects.kotlin.quizabfahrt.application.session.Outcome
 import projects.kotlin.quizabfahrt.application.session.QuizSessionException
 import projects.kotlin.quizabfahrt.application.session.QuizSessionService
+import projects.kotlin.quizabfahrt.model.QuestionRef
 
 @Controller
 class ScoreController(private val questionService: QuestionService, private val sessions: QuizSessionService) {
 
-    @GetMapping("/board/{id}/question/{questionId}/score")
+    @GetMapping("/board/{board}/category/{category}/question/{question}/score")
     fun score(
         model: Model,
-        @PathVariable id: Int,
-        @PathVariable questionId: Int,
+        @PathVariable board: Int,
+        @PathVariable category: Int,
+        @PathVariable question: Int,
         @CookieValue(SessionCookies.HOST, required = false) hostToken: String?,
     ): String {
         val session = sessions.requireHost(hostToken)
-        val question = questionService.getQuestion(session, id-1, questionId)
+        val ref = QuestionRef.fromPath(board, category, question)
+        val current = questionService.getQuestion(session, ref)
         sessions.closeBuzzing(session)
 
-        model.addAttribute("boardId", id)
-        model.addAttribute("question", question)
-        model.addAttribute("penalty", question.points / 2)
-        model.addAttribute("rows", sessions.scoringRows(session, id-1, questionId))
+        model.addAttribute("ref", ref)
+        model.addAttribute("question", current)
+        model.addAttribute("penalty", current.points / 2)
+        model.addAttribute("rows", sessions.scoringRows(session, ref))
         return "score"
     }
 
-    @PostMapping("/board/{id}/question/{questionId}/score")
+    @PostMapping("/board/{board}/category/{category}/question/{question}/score")
     fun toggleResult(
-        @PathVariable id: Int,
-        @PathVariable questionId: Int,
+        @PathVariable board: Int,
+        @PathVariable category: Int,
+        @PathVariable question: Int,
         @RequestParam playerId: Int,
         @RequestParam outcome: Outcome,
         @CookieValue(SessionCookies.HOST, required = false) hostToken: String?,
     ): String {
         val session = sessions.requireHost(hostToken)
-        val question = questionService.getQuestion(session, id-1, questionId)
+        val ref = QuestionRef.fromPath(board, category, question)
+        val current = questionService.getQuestion(session, ref)
         try {
-            sessions.toggleResult(session, id-1, questionId, playerId, outcome, question.points)
+            sessions.toggleResult(session, ref, playerId, outcome, current.points)
         } catch (_: QuizSessionException) {
         }
-        return "redirect:/board/$id/question/$questionId/score"
+        return "redirect:${ref.toPath("/score")}"
     }
 }

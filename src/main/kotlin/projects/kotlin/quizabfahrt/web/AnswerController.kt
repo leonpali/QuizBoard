@@ -8,30 +8,31 @@ import org.springframework.web.bind.annotation.PathVariable
 import projects.kotlin.quizabfahrt.application.service.QuestionService
 import projects.kotlin.quizabfahrt.application.session.QuizSessionService
 import projects.kotlin.quizabfahrt.model.EAnswerTypes
+import projects.kotlin.quizabfahrt.model.QuestionRef
 
 @Controller
 class AnswerController(private val questionService: QuestionService, private val sessions: QuizSessionService) {
 
-    @GetMapping("/board/{id}/question/{questionId}/answer")
+    @GetMapping("/board/{board}/category/{category}/question/{question}/answer")
     fun answer(
         model: Model,
-        @PathVariable id: Int,
-        @PathVariable questionId: Int,
+        @PathVariable board: Int,
+        @PathVariable category: Int,
+        @PathVariable question: Int,
         @CookieValue(SessionCookies.HOST, required = false) hostToken: String?,
     ): String {
         val session = sessions.requireHost(hostToken)
-        val question = questionService.getQuestion(session, id-1, questionId)
+        val ref = QuestionRef.fromPath(board, category, question)
+        val current = questionService.getQuestion(session, ref)
         sessions.closeBuzzing(session)
 
-        model.addAttribute("boardId", id)
-        model.addAttribute("question", question)
+        model.addAttribute("question", current)
         model.addAttribute(
             "nextUrl",
-            if (sessions.hostState(session).players.isEmpty()) "/board/$id"
-            else "/board/$id/question/$questionId/score",
+            if (sessions.hostState(session).players.isEmpty()) ref.getBoardPath() else ref.toPath("/score"),
         )
 
-        return when (question.answer.type) {
+        return when (current.answer.type) {
             EAnswerTypes.TEXT -> "textAnswer"
             EAnswerTypes.IMAGE -> "imageAnswer"
             EAnswerTypes.TEXTIMAGE -> "textImageAnswer"
