@@ -70,6 +70,7 @@ class EditorController(private val editor: BoardEditorService) {
         }
         model.addAttribute("questionsPerCategory", CompilationEngine.QUESTIONS_PER_CATEGORY)
         model.addAttribute("maxCategories", BoardEditorService.MAX_CATEGORIES)
+        model.addAttribute("maxNameLength", BoardEditorService.MAX_NAME_LENGTH)
         return "editorBoard"
     }
 
@@ -99,6 +100,7 @@ class EditorController(private val editor: BoardEditorService) {
         }
         model.addAttribute("questionsPerCategory", CompilationEngine.QUESTIONS_PER_CATEGORY)
         model.addAttribute("maxQuestions", BoardEditorService.MAX_QUESTIONS)
+        model.addAttribute("maxNameLength", BoardEditorService.MAX_NAME_LENGTH)
         return "editorCategory"
     }
 
@@ -213,14 +215,14 @@ class EditorController(private val editor: BoardEditorService) {
     }
 
     private fun questionPage(model: Model, draft: BoardDraft, c: Int, q: Int, form: ContentInput) =
-        contentPage(model, draft, c, form, EQuestionTypes.entries, "Frage ${q + 1} bearbeiten", "/editor/categories/$c/questions/$q/question")
+        contentPage(model, draft, c, form, EQuestionTypes.entries, "Frage ${q + 1} bearbeiten", "/editor/categories/$c/questions/$q/question", forQuestion = true)
 
     private fun answerPage(model: Model, draft: BoardDraft, c: Int, q: Int, form: ContentInput) =
-        contentPage(model, draft, c, form, EAnswerTypes.entries, "Antwort zu Frage ${q + 1} bearbeiten", "/editor/categories/$c/questions/$q/answer")
+        contentPage(model, draft, c, form, EAnswerTypes.entries, "Antwort zu Frage ${q + 1} bearbeiten", "/editor/categories/$c/questions/$q/answer", forQuestion = false)
 
     private fun contentPage(
         model: Model, draft: BoardDraft, c: Int, form: ContentInput,
-        types: List<ContentType>, title: String, action: String,
+        types: List<ContentType>, title: String, action: String, forQuestion: Boolean,
     ): String {
         model.addAttribute("categoryName", synchronized(draft) { draft.getCategory(c).name })
         model.addAttribute("c", c)
@@ -230,8 +232,9 @@ class EditorController(private val editor: BoardEditorService) {
         model.addAttribute("types", types)
         model.addAttribute("typeHints", types.mapNotNull { type -> type.hint?.let { "${type.label}: $it" } })
         model.addAttribute("fields", FormField.of(types))
-        model.addAttribute("hasPoints", form.points != null)
-        model.addAttribute("inputs", if (form.inputKey != null) EInputTypes.entries else emptyList())
+        model.addAttribute("forQuestion", forQuestion)
+        model.addAttribute("inputs", EInputTypes.entries)
+        model.addAttribute("maxPoints", BoardEditorService.MAX_POINTS)
         return "editorContent"
     }
 }

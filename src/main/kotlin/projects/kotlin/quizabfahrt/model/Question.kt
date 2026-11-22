@@ -17,6 +17,8 @@ data class Question(
 
     fun getAnswerTypeKey(): String = answer.type.key
 
+    fun getPenalty(): Int = points / 2
+
     fun getInputLabel(): String = input.label
 
     fun hasInputValues(): Boolean = input.takesValue

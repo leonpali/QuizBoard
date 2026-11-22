@@ -7,6 +7,7 @@ import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import projects.kotlin.quizabfahrt.model.Board
 import projects.kotlin.quizabfahrt.model.EInputTypes
+import projects.kotlin.quizabfahrt.model.Question
 import projects.kotlin.quizabfahrt.model.QuestionRef
 import java.nio.file.Files
 import java.nio.file.Path
@@ -120,8 +121,8 @@ class QuizSessionService(
         return session.getPlayerState(player)
     }
 
-    fun toggleResult(session: QuizSession, ref: QuestionRef, playerId: Int, outcome: Outcome, points: Int) {
-        session.toggleResult(ref, playerId, outcome, points)
+    fun toggleResult(session: QuizSession, ref: QuestionRef, playerId: Int, outcome: Outcome, question: Question) {
+        session.toggleResult(ref, playerId, outcome, question)
         events.publishEvent(SessionChangedEvent(session))
     }
 

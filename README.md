@@ -196,7 +196,7 @@ src/main/kotlin/projects/kotlin/quizabfahrt/
 ├── application/
 │   ├── service/            QuizService (upload + validation), QuestionService
 │   │   └── parser/         CompilationEngine: parses the .txt board files
-│   ├── session/            QuizSession and QuizSessionService: codes, players, participant input, scores, ranking
+│   ├── session/            QuizSession (players, submissions, scores, ranking) and QuizSessionService (codes, joining, expiry)
 │   └── editor/             BoardDraft and BoardEditorService: in-memory drafts for the board editor
 └── web/                    Controllers, cookies, live updates (QuizEventBroadcaster)
 
@@ -218,13 +218,13 @@ The Content-Security-Policy blocks every script that doesn't carry the request's
 
 A question is `Question(points, content, answer)`, where `content` and `answer` are `Content` objects: a type plus the values of its fields. Types and fields are declared once, and parser, writer, editor and validation work from these declarations:
 
-- `ContentField` lists the kinds of fields (`text`, `img`). File fields declare their allowed extensions, which also drive the upload check and the editor hints.
+- `ContentField` lists the kinds of fields (`text`, `img`) with their maximum length, which the editor checks in the browser and on the server. File fields also declare their allowed extensions, which drive the upload check and the editor hints.
 - `EQuestionTypes` and `EAnswerTypes` declare each type's key (the word in board files), its label (shown in the editor) and the fields it needs.
 - `Content.of(type, values)` is the only way to create content and rejects values that miss a field the type needs.
 
 To add a type, e.g. an audio question:
 
-1. If it needs a new kind of field, add it to `ContentField`, e.g. `AUDIO("audio", "Audio", listOf("mp3", "ogg"))`.
+1. If it needs a new kind of field, add it to `ContentField`, e.g. `AUDIO("audio", "Audio", maxLength = 100, extensions = listOf("mp3", "ogg"))`.
 2. Add the type to `EQuestionTypes` (or `EAnswerTypes`), e.g. `AUDIO("audio", "Audio", setOf(ContentField.AUDIO))`.
 3. Create `templates/questions/audio.html` (or `templates/answers/…`) with a fragment named `content` that displays it, using `question.getValue('audio')` (or `getAnswerValue`). `questions/lineup.html` shows a type with its own script.
 4. Describe it in the board template (`static/downloads/Board_Vorlage.txt`) and in the board format table above.
@@ -238,7 +238,7 @@ How participants answer is set per question with `input:` and declared in `EInpu
 The participant page contains one section per input type and shows the one of the current question. Each section comes from `templates/inputs/<key>.html` and registers itself with `registerInput(key, setup)`:
 
 - `setup(section, submit)` runs once. `section` is the element holding the fragment; `submit(value)` sends a submission (without a value for a buzzer) and updates the page with the answer.
-- It returns `render(state)`, called on every update. `state` holds `input`, `inputOpen`, `submitted`, `position`, `value` and `score`. `render` updates the section and returns the status text, or `null` for "Warte auf die nächste Frage".
+- It returns `render(state)`, called on every update. `state` holds `inputKey`, `inputOpen`, `submitted`, `position`, `value` and `score`. `render` updates the section and returns the status text, or `null` for "Warte auf die nächste Frage".
 
 To add an input type, e.g. a number estimate:
 

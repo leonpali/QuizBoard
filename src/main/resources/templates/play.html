@@ -35,8 +35,8 @@
 
         function render(state) {
             score.textContent = state.score + ' Punkte';
-            sections.forEach(section => section.hidden = section.dataset.input !== state.input);
-            status.textContent = renderers.get(state.input)(state) ?? 'Warte auf die nächste Frage';
+            sections.forEach(section => section.hidden = section.dataset.input !== state.inputKey);
+            status.textContent = renderers.get(state.inputKey)(state) ?? 'Warte auf die nächste Frage';
         }
 
         async function submit(value) {

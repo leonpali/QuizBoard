@@ -62,7 +62,7 @@
         <section class="card">
             <h2>Kategorie umbenennen</h2>
             <form class="inline-form" th:action="@{'/editor/categories/' + ${c} + '/rename'}" method="post">
-                <input class="text-input" type="text" name="name" th:value="${category.name}" maxlength="100" required aria-label="Name">
+                <input class="text-input" type="text" name="name" th:value="${category.name}" th:maxlength="${maxNameLength}" required aria-label="Name">
                 <button type="submit" class="primary-button">Umbenennen</button>
             </form>
         </section>

@@ -44,6 +44,8 @@ data class FormField(private val field: ContentField, val usedBy: String) {
 
     fun isMultiline() = field.isMultiline
 
+    fun getMaxLength() = field.maxLength
+
     fun getExtensions() = field.extensions.joinToString()
 
     companion object {

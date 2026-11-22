@@ -22,7 +22,6 @@ class ScoreController(private val questionService: QuestionService, private val 
 
         model.addAttribute("ref", ref)
         model.addAttribute("question", question)
-        model.addAttribute("penalty", question.points / 2)
         model.addAttribute("rows", session.getScoringRows(ref))
         return "score"
     }
@@ -36,7 +35,7 @@ class ScoreController(private val questionService: QuestionService, private val 
     ): String {
         val question = questionService.getQuestion(session, ref)
         try {
-            sessions.toggleResult(session, ref, playerId, outcome, question.points)
+            sessions.toggleResult(session, ref, playerId, outcome, question)
         } catch (_: QuizSessionException) {
         }
         return "redirect:${ref.toPath("/score")}"

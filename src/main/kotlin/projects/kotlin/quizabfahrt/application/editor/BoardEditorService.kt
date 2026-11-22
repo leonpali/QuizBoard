@@ -26,7 +26,6 @@ class BoardEditorService(private val compiler: CompilationEngine) {
     companion object {
         const val MAX_CATEGORIES = 12
         const val MAX_QUESTIONS = 12
-        const val MAX_TEXT_LENGTH = 1000
         const val MAX_NAME_LENGTH = 100
         const val MAX_POINTS = 100_000
         const val DEFAULT_FILE_NAME = "Board.txt"
@@ -114,12 +113,11 @@ class BoardEditorService(private val compiler: CompilationEngine) {
     fun updateQuestion(draft: BoardDraft, categoryIndex: Int, questionIndex: Int, input: ContentInput) = change(draft) {
         val points = input.points?.trim()?.toIntOrNull()?.takeIf { it in 0..MAX_POINTS }
             ?: throw BoardEditorException("Die Punkte müssen eine ganze Zahl zwischen 0 und $MAX_POINTS sein.")
+        val content = buildContent<EQuestionTypes>(input)
+        val inputType = typeOf<EInputTypes>(input.inputKey)
+            ?: throw BoardEditorException("Unbekannte Eingabe der Teilnehmer '${input.inputKey.orEmpty()}'.")
         val question = draft.getQuestion(categoryIndex, questionIndex)
-        val inputType = input.inputKey?.let { typeOf<EInputTypes>(it) ?: throw BoardEditorException("Unbekannte Eingabe '$it'.") }
-        draft.setQuestion(
-            categoryIndex, questionIndex,
-            question.copy(points = points, content = buildContent<EQuestionTypes>(input), input = inputType ?: question.input),
-        )
+        draft.setQuestion(categoryIndex, questionIndex, question.copy(points = points, content = content, input = inputType))
     }
 
     fun updateAnswer(draft: BoardDraft, categoryIndex: Int, questionIndex: Int, input: ContentInput) = change(draft) {
@@ -181,8 +179,8 @@ class BoardEditorService(private val compiler: CompilationEngine) {
     }
 
     private fun cleanField(field: ContentField, value: String?): String? {
-        if (!field.isFile) return clean(value, field.label, MAX_TEXT_LENGTH)
-        val name = clean(value, field.label, MAX_NAME_LENGTH)?.let { QuizService.nfc(it) } ?: return null
+        if (!field.isFile) return clean(value, field.label, field.maxLength)
+        val name = clean(value, field.label, field.maxLength)?.let { QuizService.nfc(it) } ?: return null
         if (!QuizService.isPlainFileName(name)) throw BoardEditorException("${field.label}: Der Dateiname darf keine Ordner enthalten.")
         return name
     }

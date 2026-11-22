@@ -33,7 +33,7 @@
                                     th:text="'✔ +' + ${question.points}">✔ +300</button>
                             <button class="result-button wrong" name="outcome" value="WRONG"
                                     th:classappend="${row.isWrong()} ? 'active' : ''"
-                                    th:text="'✘ −' + ${penalty}">✘ −150</button>
+                                    th:text="'✘ −' + ${question.getPenalty()}">✘ −150</button>
                         </form>
                     </td>
                 </tr>

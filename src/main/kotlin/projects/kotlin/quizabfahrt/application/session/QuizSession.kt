@@ -2,6 +2,7 @@ package projects.kotlin.quizabfahrt.application.session
 
 import projects.kotlin.quizabfahrt.model.Board
 import projects.kotlin.quizabfahrt.model.EInputTypes
+import projects.kotlin.quizabfahrt.model.Question
 import projects.kotlin.quizabfahrt.model.QuestionRef
 import java.nio.file.Path
 import java.time.Instant
@@ -9,10 +10,6 @@ import java.time.Instant
 class Player(val id: Int, val token: String, val name: String)
 
 enum class Outcome { CORRECT, WRONG }
-
-data class QuestionResult(val outcome: Outcome, val points: Int)
-
-data class Submission(val player: Player, val value: String?)
 
 class QuizSession(
     val code: String,
@@ -22,12 +19,9 @@ class QuizSession(
     val expiresAt: Instant,
 ) {
     private val players = LinkedHashMap<String, Player>()
-    private var currentQuestion: QuestionRef? = null
-    private var currentInput = EInputTypes.DEFAULT
-    private var inputOpen = false
     private val askedQuestions = HashSet<QuestionRef>()
-    private val submissions = HashMap<QuestionRef, MutableList<Submission>>()
-    private val results = HashMap<QuestionRef, HashMap<Int, QuestionResult>>()
+    private val input = QuestionInput()
+    private val scores = Scores()
     private var nextPlayerId = 1
 
     fun isExpired(now: Instant = Instant.now()) = now.isAfter(expiresAt)
@@ -48,89 +42,126 @@ class QuizSession(
     }
 
     @Synchronized
-    fun openQuestion(ref: QuestionRef, input: EInputTypes) {
+    fun openQuestion(ref: QuestionRef, inputType: EInputTypes) {
         askedQuestions.add(ref)
-        currentQuestion = ref
-        currentInput = input
-        inputOpen = true
+        input.open(ref, inputType)
     }
 
     @Synchronized
-    fun closeInput(): Boolean = inputOpen.also { inputOpen = false }
+    fun closeInput(): Boolean = input.close()
 
     @Synchronized
     fun isAsked(ref: QuestionRef): Boolean = ref in askedQuestions
 
     @Synchronized
-    fun submit(player: Player, value: String?): Boolean {
-        val ref = currentQuestion
-        if (!inputOpen || ref == null) return false
-        val cleaned = currentInput.cleanValue(value)
-        if (!currentInput.accepts(cleaned)) return false
-        val questionSubmissions = submissions.getOrPut(ref) { mutableListOf() }
-        if (questionSubmissions.any { it.player == player }) return false
-        questionSubmissions.add(Submission(player, cleaned))
-        return true
-    }
+    fun submit(player: Player, value: String?): Boolean = input.submit(player, value)
 
     @Synchronized
-    fun toggleResult(ref: QuestionRef, playerId: Int, outcome: Outcome, points: Int) {
-        if (players.values.none { it.id == playerId }) throw QuizSessionException("Unbekannter Teilnehmer.")
-        val questionResults = results.getOrPut(ref) { HashMap() }
-        if (questionResults[playerId]?.outcome == outcome) {
-            questionResults.remove(playerId)
-        } else {
-            val delta = if (outcome == Outcome.CORRECT) points else -points / 2
-            questionResults[playerId] = QuestionResult(outcome, delta)
-        }
+    fun toggleResult(ref: QuestionRef, playerId: Int, outcome: Outcome, question: Question) {
+        val player = players.values.firstOrNull { it.id == playerId } ?: throw QuizSessionException("Unbekannter Teilnehmer.")
+        scores.toggle(ref, player, outcome, question)
     }
 
     @Synchronized
     fun getScoringRows(ref: QuestionRef): List<ScoringRow> {
-        val questionSubmissions = submissions[ref].orEmpty()
-        val submitted = questionSubmissions.mapIndexed { index, it -> getScoringRow(ref, it.player, index + 1, it.value) }
-        val waiting = players.values.filter { player -> questionSubmissions.none { it.player == player } }
+        val submissions = input.getSubmissions(ref)
+        val submitted = submissions.mapIndexed { index, it -> getScoringRow(ref, it.player, index + 1, it.value) }
+        val waiting = players.values.filter { player -> submissions.none { it.player == player } }
         return submitted + waiting.map { getScoringRow(ref, it, null, null) }
     }
 
     @Synchronized
     fun getHostState() = HostState(
         code = code,
-        players = players.values.map { PlayerScore(it.name, getScore(it)) }.sortedByDescending { it.score },
-        input = currentInput.label,
-        inputOpen = inputOpen,
-        submissions = getCurrentSubmissions().map { it.player.name },
+        players = getPlayerScores(),
+        inputLabel = input.type.label,
+        inputOpen = input.isOpen,
+        submissions = input.getCurrentSubmissions().map { it.player.name },
     )
 
     @Synchronized
     fun getPlayerState(player: Player): PlayerState {
-        val current = getCurrentSubmissions()
-        val index = current.indexOfFirst { it.player == player }
+        val submissions = input.getCurrentSubmissions()
+        val index = submissions.indexOfFirst { it.player == player }
         return PlayerState(
             name = player.name,
-            score = getScore(player),
-            input = currentInput.key,
-            inputOpen = inputOpen,
+            score = scores.getScore(player),
+            inputKey = input.type.key,
+            inputOpen = input.isOpen,
             submitted = index >= 0,
             position = if (index >= 0) index + 1 else null,
-            value = current.getOrNull(index)?.value,
+            value = submissions.getOrNull(index)?.value,
         )
     }
 
     @Synchronized
     fun getRanking(): List<RankedPlayer> {
-        val sorted = players.values.map { PlayerScore(it.name, getScore(it)) }.sortedByDescending { it.score }
+        val sorted = getPlayerScores()
         return sorted.map { player ->
             RankedPlayer(sorted.indexOfFirst { it.score == player.score } + 1, player.name, player.score)
         }
     }
 
-    private fun getScore(player: Player): Int = results.values.sumOf { it[player.id]?.points ?: 0 }
-
-    private fun getCurrentSubmissions(): List<Submission> = currentQuestion?.let { submissions[it] }.orEmpty()
+    private fun getPlayerScores(): List<PlayerScore> =
+        players.values.map { PlayerScore(it.name, scores.getScore(it)) }.sortedByDescending { it.score }
 
     private fun getScoringRow(ref: QuestionRef, player: Player, position: Int?, value: String?) =
-        ScoringRow(player.id, player.name, position, value, results[ref]?.get(player.id)?.outcome, getScore(player))
+        ScoringRow(player.id, player.name, position, value, scores.getOutcome(ref, player), scores.getScore(player))
+}
+
+private data class Submission(val player: Player, val value: String?)
+
+private class QuestionInput {
+    private var currentQuestion: QuestionRef? = null
+    private val submissions = HashMap<QuestionRef, MutableList<Submission>>()
+
+    var type = EInputTypes.DEFAULT
+        private set
+    var isOpen = false
+        private set
+
+    fun open(ref: QuestionRef, input: EInputTypes) {
+        currentQuestion = ref
+        type = input
+        isOpen = true
+    }
+
+    fun close(): Boolean = isOpen.also { isOpen = false }
+
+    fun submit(player: Player, value: String?): Boolean {
+        val ref = currentQuestion
+        if (!isOpen || ref == null) return false
+        val cleaned = type.cleanValue(value)
+        if (!type.accepts(cleaned)) return false
+        val questionSubmissions = submissions.getOrPut(ref) { mutableListOf() }
+        if (questionSubmissions.any { it.player == player }) return false
+        questionSubmissions.add(Submission(player, cleaned))
+        return true
+    }
+
+    fun getSubmissions(ref: QuestionRef): List<Submission> = submissions[ref].orEmpty()
+
+    fun getCurrentSubmissions(): List<Submission> = currentQuestion?.let(::getSubmissions).orEmpty()
+}
+
+private data class QuestionResult(val outcome: Outcome, val points: Int)
+
+private class Scores {
+    private val results = HashMap<QuestionRef, HashMap<Int, QuestionResult>>()
+
+    fun toggle(ref: QuestionRef, player: Player, outcome: Outcome, question: Question) {
+        val questionResults = results.getOrPut(ref) { HashMap() }
+        if (questionResults[player.id]?.outcome == outcome) {
+            questionResults.remove(player.id)
+        } else {
+            val points = if (outcome == Outcome.CORRECT) question.points else -question.getPenalty()
+            questionResults[player.id] = QuestionResult(outcome, points)
+        }
+    }
+
+    fun getScore(player: Player): Int = results.values.sumOf { it[player.id]?.points ?: 0 }
+
+    fun getOutcome(ref: QuestionRef, player: Player): Outcome? = results[ref]?.get(player.id)?.outcome
 }
 
 data class PlayerScore(val name: String, val score: Int)
@@ -140,7 +171,7 @@ data class RankedPlayer(val place: Int, val name: String, val score: Int)
 data class HostState(
     val code: String,
     val players: List<PlayerScore>,
-    val input: String,
+    val inputLabel: String,
     val inputOpen: Boolean,
     val submissions: List<String>,
 )
@@ -148,7 +179,7 @@ data class HostState(
 data class PlayerState(
     val name: String,
     val score: Int,
-    val input: String,
+    val inputKey: String,
     val inputOpen: Boolean,
     val submitted: Boolean,
     val position: Int?,

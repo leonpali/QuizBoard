@@ -15,7 +15,7 @@
                 events.addEventListener('state', e => {
                     const state = JSON.parse(e.data);
                     panel.hidden = state.players.length === 0;
-                    status.textContent = state.input + (state.inputOpen ? ' offen' : ' geschlossen');
+                    status.textContent = state.inputLabel + (state.inputOpen ? ' offen' : ' geschlossen');
                     status.classList.toggle('open', state.inputOpen);
                     list.replaceChildren(...state.submissions.map(name => {
                         const li = document.createElement('li');

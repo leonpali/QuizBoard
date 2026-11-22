@@ -11,6 +11,8 @@ import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.multipart
 import org.springframework.test.web.servlet.post
 import org.springframework.test.web.servlet.request.RequestPostProcessor
+import projects.kotlin.quizabfahrt.application.editor.BoardEditorService
+import projects.kotlin.quizabfahrt.model.ContentField
 import projects.kotlin.quizabfahrt.model.EAnswerTypes
 import projects.kotlin.quizabfahrt.model.EInputTypes
 import projects.kotlin.quizabfahrt.model.EQuestionTypes
@@ -113,6 +115,21 @@ class EditorControllerTest {
     }
 
     @Test
+    fun `a question form without input type comes back complete with an error`() {
+        val draft = newDraft()
+        addCategory(draft, "K")
+        mockMvc.post("/editor/categories/0/questions") { cookie(draft) }
+
+        val html = mockMvc.post("/editor/categories/0/questions/0/question") {
+            cookie(draft); param("type", "text"); param("text", "Frage")
+        }.andExpect { status { isOk() } }.andReturn().response.contentAsString
+
+        assertContains(html, "Die Punkte müssen")
+        assertContains(html, "name=\"points\"")
+        assertContains(html, "name=\"input\"")
+    }
+
+    @Test
     fun `the forms offer every type and the fields they need`() {
         val draft = newDraft()
         addCategory(draft, "K")
@@ -124,6 +141,9 @@ class EditorControllerTest {
         assertContains(questionForm, "Für: Text, Lineup")
         assertContains(questionForm, "name=\"points\"")
         assertContains(questionForm, "Lineup: Einträge im Text mit Komma trennen")
+        assertContains(questionForm, "name=\"text\" rows=\"4\" maxlength=\"${ContentField.TEXT.maxLength}\"")
+        assertContains(questionForm, "name=\"img\" maxlength=\"${ContentField.IMAGE.maxLength}\"")
+        assertContains(questionForm, "max=\"${BoardEditorService.MAX_POINTS}\"")
 
         val answerForm = page("/editor/categories/0/questions/0/answer", draft)
         assertEquals(EAnswerTypes.entries.map { it.key }, options(answerForm, "type"))

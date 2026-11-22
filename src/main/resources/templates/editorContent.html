@@ -31,19 +31,19 @@
                     <span class="field-title" th:text="${field.getLabel()}">Text</span>
                     <span class="field-hint" th:text="'Für: ' + ${field.usedBy}">Für: Text</span>
                     <span class="field-hint" th:if="${field.isFile()}" th:text="'Dateiname. Erlaubte Formate: ' + ${field.getExtensions()}">Formate</span>
-                    <textarea th:if="${field.isMultiline()}" class="text-input" th:name="${field.getKey()}" rows="4" maxlength="1000"
+                    <textarea th:if="${field.isMultiline()}" class="text-input" th:name="${field.getKey()}" rows="4" th:maxlength="${field.getMaxLength()}"
                               th:text="${form.getValue(field.getKey())}"></textarea>
-                    <input th:unless="${field.isMultiline()}" class="text-input" type="text" th:name="${field.getKey()}" maxlength="100"
+                    <input th:unless="${field.isMultiline()}" class="text-input" type="text" th:name="${field.getKey()}" th:maxlength="${field.getMaxLength()}"
                            th:value="${form.getValue(field.getKey())}">
                 </label>
 
-                <label class="field" th:if="${hasPoints}">
+                <label class="field" th:if="${forQuestion}">
                     <span class="field-title">Punkte</span>
                     <span class="field-hint">Eine falsche Antwort zieht die Hälfte ab.</span>
-                    <input class="text-input points-input" type="number" name="points" th:value="${form.points}" min="0" max="100000" step="1" required>
+                    <input class="text-input points-input" type="number" name="points" th:value="${form.points}" min="0" th:max="${maxPoints}" step="1" required>
                 </label>
 
-                <label class="field" th:unless="${#lists.isEmpty(inputs)}">
+                <label class="field" th:if="${forQuestion}">
                     <span class="field-title">Eingabe der Teilnehmer</span>
                     <select class="text-input" name="input">
                         <option th:each="input : ${inputs}" th:value="${input.key}" th:selected="${form.isInput(input.key)}"

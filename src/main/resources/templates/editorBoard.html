@@ -45,7 +45,7 @@
 
             <form class="inline-form" th:action="@{/editor/categories}" method="post"
                   th:if="${#lists.size(categories) < maxCategories}">
-                <input class="text-input" type="text" name="name" placeholder="Name der neuen Kategorie" maxlength="100" required>
+                <input class="text-input" type="text" name="name" placeholder="Name der neuen Kategorie" th:maxlength="${maxNameLength}" required>
                 <button type="submit" class="primary-button">Kategorie hinzufügen</button>
             </form>
         </section>
@@ -60,7 +60,7 @@
                 <p>Du kannst die Datei trotzdem herunterladen und später hier weiterbearbeiten.</p>
             </div>
             <form id="download-form" class="inline-form" th:action="@{/editor/download}" method="post">
-                <input class="text-input" type="text" name="fileName" th:value="${draft.fileName}" maxlength="100" aria-label="Dateiname">
+                <input class="text-input" type="text" name="fileName" th:value="${draft.fileName}" th:maxlength="${maxNameLength}" aria-label="Dateiname">
                 <button type="submit" class="primary-button">Herunterladen</button>
             </form>
             <p class="field-hint">Nach dem Herunterladen wird der Entwurf aus dem Speicher gelöscht.</p>

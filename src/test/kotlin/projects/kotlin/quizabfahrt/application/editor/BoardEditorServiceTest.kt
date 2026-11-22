@@ -21,8 +21,8 @@ class BoardEditorServiceTest {
 
     private val template = javaClass.getResource("/static/downloads/Board_Vorlage.txt")!!.readBytes()
 
-    private fun questionInput(type: EQuestionTypes, text: String?, img: String?, points: String) =
-        ContentInput(type.key, mapOf("text" to text, "img" to img), points)
+    private fun questionInput(type: EQuestionTypes, text: String?, img: String?, points: String, input: String? = "buzzer") =
+        ContentInput(type.key, mapOf("text" to text, "img" to img), points, input)
 
     private fun answerInput(type: EAnswerTypes, text: String?, img: String?) =
         ContentInput(type.key, mapOf("text" to text, "img" to img))
@@ -184,23 +184,23 @@ class BoardEditorServiceTest {
     }
 
     @Test
-    fun `the input type can be changed and is kept when the form doesn't send one`() {
+    fun `the input type can be changed and must be given`() {
         val draft = boardWith("K" to 1)
         assertEquals(EInputTypes.BUZZER, draft.getQuestion(0, 0).input)
 
-        editor.updateQuestion(draft, 0, 0, questionInput(EQuestionTypes.TEXT, "Frage", null, "100").copy(inputKey = "text"))
-        assertEquals(EInputTypes.TEXT, draft.getQuestion(0, 0).input)
-
-        editor.updateQuestion(draft, 0, 0, questionInput(EQuestionTypes.TEXT, "Frage", null, "200"))
+        editor.updateQuestion(draft, 0, 0, questionInput(EQuestionTypes.TEXT, "Frage", null, "100", input = "text"))
         assertEquals(EInputTypes.TEXT, draft.getQuestion(0, 0).input)
         assertContains(draft.toText(), "input: text")
+
+        assertFailsWith<BoardEditorException> { editor.updateQuestion(draft, 0, 0, questionInput(EQuestionTypes.TEXT, "Frage", null, "200", input = null)) }
+        assertEquals(100, draft.getQuestion(0, 0).points)
     }
 
     @Test
     fun `unknown type keys are rejected`() {
         val draft = boardWith("K" to 1)
         assertFailsWith<BoardEditorException> {
-            editor.updateQuestion(draft, 0, 0, questionInput(EQuestionTypes.TEXT, "Frage", null, "100").copy(inputKey = "gesten"))
+            editor.updateQuestion(draft, 0, 0, questionInput(EQuestionTypes.TEXT, "Frage", null, "100", input = "gesten"))
         }
         assertFailsWith<BoardEditorException> { editor.updateQuestion(draft, 0, 0, ContentInput("video", emptyMap(), "100")) }
         assertFailsWith<BoardEditorException> { editor.updateAnswer(draft, 0, 0, ContentInput("lineup", mapOf("text" to "x"))) }
