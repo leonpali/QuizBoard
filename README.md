@@ -248,17 +248,30 @@ Missing or invalid values are reported with the setting's label, in the editor a
 
 ## Adding a participant input type
 
-How participants answer is set per question with `input:` and declared in `EInputTypes`: its key (the word in board files), its label (shown in the editor and on the big screen) and `maxLength`, the longest value it accepts. A buzzer has no value (`maxLength` 0); a type with a value only accepts non-empty submissions, and the scoring screen then shows each participant's value.
+How participants answer is set per question with `input:` and declared in `EInputTypes`:
+
+- `key` (the word in board files) and `label` (shown in the editor and on the big screen).
+- `maxLength`, the longest value it accepts. A buzzer has no value (`maxLength` 0). A type with a value only accepts valid submissions, and the scoring screen shows each participant's value.
+- `fields`, content fields the question must have for this input, e.g. answer options. The parser and the editor reject questions without them, and the editor shows these fields on the question form.
+- `readValue(value, question)` checks a submission and returns the value to store, or `null` to reject it. By default it trims the value and cuts it to `maxLength`; a type overrides it for its own rules, like "must be a number" or "must be one of the options".
+- `getPlayerData(question)` returns data the phones need, e.g. the options to choose from. It is sent to every participant, so it must never contain the answer.
 
 The participant page contains one section per input type and shows the one of the current question. Each section comes from `templates/inputs/<key>.html` and registers itself with `registerInput(key, setup)`:
 
 - `setup(section, submit)` runs once. `section` is the element holding the fragment; `submit(value)` sends a submission (without a value for a buzzer) and updates the page with the answer.
-- It returns `render(state)`, called on every update. `state` holds `inputKey`, `inputOpen`, `submitted`, `position`, `value` and `score`. `render` updates the section and returns the status text, or `null` for "Warte auf die nächste Frage".
+- It returns `render(state)`, called on every update. `state` holds `inputKey`, `inputData` (from `getPlayerData`), `inputOpen`, `submitted`, `position`, `value` and `score`. `render` updates the section and returns the status text, or `null` for "Warte auf die nächste Frage".
 
-To add an input type, e.g. a number estimate:
+To add an input type, e.g. multiple choice:
 
-1. Add it to `EInputTypes`, e.g. `NUMBER("number", "Schätzung", maxLength = 15)`. If its values need more checks than trimming and the length limit, extend `cleanValue`.
-2. Create `templates/inputs/number.html` with a fragment named `content`, following `inputs/text.html`.
-3. Describe it in the board template and in the board format table above.
+1. If it needs a new kind of field, add it to `ContentField`, e.g. `OPTIONS("options", "Antwortmöglichkeiten", maxLength = 1000)`.
+2. Add the type to `EInputTypes` and override what it needs:
+   ```kotlin
+   CHOICE("choice", "Auswahl", maxLength = 100, fields = setOf(ContentField.OPTIONS)) {
+       override fun readValue(value: String, question: Question) = getOptions(question).firstOrNull { it == value.trim() }
+       override fun getPlayerData(question: Question) = mapOf("options" to getOptions(question))
+   }
+   ```
+3. Create `templates/inputs/choice.html` with a fragment named `content`, following `inputs/text.html`, that builds its buttons from `state.inputData.options`.
+4. Describe it in the board template and in the board format table above.
 
-The board format, the editor's input dropdown, the submission handling, the live panel and the scoring screen need no changes. `TypeTemplatesTest` fails if an input type has no fragment or the fragment doesn't register itself.
+The board format, the editor's input dropdown and fields, the submission handling, the live panel and the scoring screen need no changes. `TypeTemplatesTest` fails if an input type has no fragment or the fragment doesn't register itself.

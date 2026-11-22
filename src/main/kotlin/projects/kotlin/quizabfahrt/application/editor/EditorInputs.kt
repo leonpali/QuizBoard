@@ -2,7 +2,7 @@ package projects.kotlin.quizabfahrt.application.editor
 
 import projects.kotlin.quizabfahrt.model.Content
 import projects.kotlin.quizabfahrt.model.ContentField
-import projects.kotlin.quizabfahrt.model.ContentType
+import projects.kotlin.quizabfahrt.model.UsesFields
 import projects.kotlin.quizabfahrt.model.QuestionSetting
 import projects.kotlin.quizabfahrt.model.QuestionSettings
 
@@ -52,7 +52,7 @@ data class FormField(private val field: ContentField, val usedBy: String) {
     fun getExtensions() = field.extensions.joinToString()
 
     companion object {
-        fun of(types: List<ContentType>): List<FormField> = ContentField.entries.mapNotNull { field ->
+        fun of(types: List<UsesFields>): List<FormField> = ContentField.entries.mapNotNull { field ->
             val users = types.filter { field in it.fields }
             if (users.isEmpty()) null else FormField(field, users.joinToString { it.label })
         }

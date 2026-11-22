@@ -24,6 +24,7 @@ import projects.kotlin.quizabfahrt.application.editor.SettingsInput
 import projects.kotlin.quizabfahrt.application.service.parser.CompilationEngine
 import projects.kotlin.quizabfahrt.model.ContentType
 import projects.kotlin.quizabfahrt.model.EAnswerTypes
+import projects.kotlin.quizabfahrt.model.EInputTypes
 import projects.kotlin.quizabfahrt.model.EQuestionTypes
 import projects.kotlin.quizabfahrt.model.QuestionSetting
 import java.time.Duration
@@ -219,12 +220,14 @@ class EditorController(private val editor: BoardEditorService) {
     private fun questionPage(model: Model, draft: BoardDraft, c: Int, q: Int, form: ContentInput, settings: SettingsInput): String {
         model.addAttribute("settings", QuestionSetting.entries)
         model.addAttribute("settingsForm", settings)
+        model.addAttribute("fields", FormField.of(EQuestionTypes.entries + EInputTypes.entries))
         return contentPage(model, draft, c, form, EQuestionTypes.entries, "Frage ${q + 1} bearbeiten", "/editor/categories/$c/questions/$q/question")
     }
 
     private fun answerPage(model: Model, draft: BoardDraft, c: Int, q: Int, form: ContentInput): String {
         model.addAttribute("settings", emptyList<QuestionSetting<*>>())
         model.addAttribute("settingsForm", SettingsInput.NONE)
+        model.addAttribute("fields", FormField.of(EAnswerTypes.entries))
         return contentPage(model, draft, c, form, EAnswerTypes.entries, "Antwort zu Frage ${q + 1} bearbeiten", "/editor/categories/$c/questions/$q/answer")
     }
 
@@ -239,7 +242,6 @@ class EditorController(private val editor: BoardEditorService) {
         model.addAttribute("form", form)
         model.addAttribute("types", types)
         model.addAttribute("typeHints", types.mapNotNull { type -> type.hint?.let { "${type.label}: $it" } })
-        model.addAttribute("fields", FormField.of(types))
         return "editorContent"
     }
 }

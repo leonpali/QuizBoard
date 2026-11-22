@@ -107,11 +107,14 @@ class CompilationEngine {
         advanceToken()
         val answerFields = readFields(ANSWER_KEYS)
 
-        return Question(
-            compileContent<EQuestionTypes>(questionFields, questionLine, "Frage"),
-            compileContent<EAnswerTypes>(answerFields, answerLine, "Antwort"),
-            compileSettings(questionFields, questionLine),
-        )
+        val content = compileContent<EQuestionTypes>(questionFields, questionLine, "Frage")
+        val answer = compileContent<EAnswerTypes>(answerFields, answerLine, "Antwort")
+        val settings = compileSettings(questionFields, questionLine)
+        return try {
+            Question(content, answer, settings)
+        } catch (e: ContentException) {
+            errorAt(questionLine, "Frage: ${e.message}")
+        }
     }
 
     private fun compileSettings(fields: Map<String, Field>, headerLine: Int): QuestionSettings = try {

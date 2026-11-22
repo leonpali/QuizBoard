@@ -32,10 +32,10 @@ class QuizSessionServiceTest {
     private lateinit var service: QuizSessionService
     private lateinit var session: QuizSession
 
-    private fun question(points: Int) = Question(
+    private fun question(points: Int = 100, input: EInputTypes = EInputTypes.BUZZER) = Question(
         Content.of(EQuestionTypes.TEXT, mapOf(ContentField.TEXT to "Frage")),
         Content.of(EAnswerTypes.TEXT, mapOf(ContentField.TEXT to "Antwort")),
-        QuestionSettings.of(mapOf("points" to points.toString())),
+        QuestionSettings.of(mapOf("points" to points.toString(), "input" to input.key)),
     )
 
     @BeforeEach
@@ -101,7 +101,7 @@ class QuizSessionServiceTest {
 
         assertFalse(service.submit(session, anna, null).submitted)
 
-        service.openQuestion(session, QuestionRef(0, 0, 3), EInputTypes.BUZZER)
+        service.openQuestion(session, QuestionRef(0, 0, 3), question(input = EInputTypes.BUZZER))
         assertEquals(1, service.submit(session, anna, null).position)
 
         service.closeInput(session)
@@ -115,7 +115,7 @@ class QuizSessionServiceTest {
         val ref = QuestionRef(0, 1, 4)
         assertFalse(session.isAsked(ref))
 
-        service.openQuestion(session, ref, EInputTypes.BUZZER)
+        service.openQuestion(session, ref, question(input = EInputTypes.BUZZER))
 
         assertTrue(session.isAsked(ref))
         assertFalse(session.isAsked(QuestionRef(0, 1, 3)))
@@ -126,13 +126,13 @@ class QuizSessionServiceTest {
         val (_, anna) = service.join(session.code, "Anna", "1.1.1.1", null)
         val (_, ben) = service.join(session.code, "Ben", "1.1.1.1", null)
 
-        service.openQuestion(session, QuestionRef(0, 0, 0), EInputTypes.BUZZER)
+        service.openQuestion(session, QuestionRef(0, 0, 0), question(input = EInputTypes.BUZZER))
         service.submit(session, ben, null)
         service.submit(session, anna, null)
         service.submit(session, ben, null)
         assertEquals(listOf("Ben", "Anna"), session.getHostState().submissions)
 
-        service.openQuestion(session, QuestionRef(0, 0, 1), EInputTypes.BUZZER)
+        service.openQuestion(session, QuestionRef(0, 0, 1), question(input = EInputTypes.BUZZER))
         assertEquals(emptyList(), session.getHostState().submissions)
         assertEquals(1, service.submit(session, anna, null).position)
     }
@@ -142,7 +142,7 @@ class QuizSessionServiceTest {
         val (_, anna) = service.join(session.code, "Anna", "1.1.1.1", null)
         val (_, ben) = service.join(session.code, "Ben", "1.1.1.1", null)
         val ref = QuestionRef(0, 0, 0)
-        service.openQuestion(session, ref, EInputTypes.TEXT)
+        service.openQuestion(session, ref, question(input = EInputTypes.TEXT))
 
         assertFalse(service.submit(session, anna, "   ").submitted)
         assertEquals("Paris", service.submit(session, anna, " Paris ").value)
@@ -158,7 +158,7 @@ class QuizSessionServiceTest {
     @Test
     fun `buzzers ignore submitted values`() {
         val (_, anna) = service.join(session.code, "Anna", "1.1.1.1", null)
-        service.openQuestion(session, QuestionRef(0, 0, 0), EInputTypes.BUZZER)
+        service.openQuestion(session, QuestionRef(0, 0, 0), question(input = EInputTypes.BUZZER))
 
         val state = service.submit(session, anna, "Paris")
 
@@ -227,7 +227,7 @@ class QuizSessionServiceTest {
         val (_, ben) = service.join(session.code, "Ben", "1.1.1.1", null)
         val (_, cem) = service.join(session.code, "Cem", "1.1.1.1", null)
 
-        service.openQuestion(session, QuestionRef(0, 0, 2), EInputTypes.BUZZER)
+        service.openQuestion(session, QuestionRef(0, 0, 2), question(input = EInputTypes.BUZZER))
         service.submit(session, cem, null)
         service.submit(session, ben, null)
         service.toggleResult(session, QuestionRef(0, 0, 2), ben.id, Outcome.CORRECT, question(100))

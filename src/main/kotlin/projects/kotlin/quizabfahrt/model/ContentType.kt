@@ -5,8 +5,16 @@ interface KeyedType {
     val label: String
 }
 
-interface ContentType : KeyedType {
+interface UsesFields : KeyedType {
     val fields: Set<ContentField>
+
+    fun requireFields(present: Set<ContentField>, kind: String) {
+        val missing = fields - present
+        if (missing.isNotEmpty()) throw ContentException("Für $kind „$label“ fehlt: ${missing.joinToString { it.label }}")
+    }
+}
+
+interface ContentType : UsesFields {
     val hint: String?
 }
 

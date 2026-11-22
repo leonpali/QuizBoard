@@ -39,7 +39,7 @@ class BoardController(private val questionService: QuestionService, private val 
 
     @PostMapping("/board/{board}/category/{category}/question/{question}/open")
     fun openQuestion(@HostSession session: QuizSession, ref: QuestionRef): String {
-        sessions.openQuestion(session, ref, questionService.getQuestion(session, ref).input)
+        sessions.openQuestion(session, ref, questionService.getQuestion(session, ref))
         return "redirect:${ref.toPath()}"
     }
 }

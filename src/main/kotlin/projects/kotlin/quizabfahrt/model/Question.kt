@@ -10,6 +10,10 @@ data class Question(val content: QuestionContent, val answer: AnswerContent, val
 
     val input: EInputTypes get() = settings[QuestionSetting.Input]
 
+    init {
+        input.requireFields(content.values.keys, "die Eingabe")
+    }
+
     fun getTypeKey(): String = content.type.key
 
     fun getTypeLabel(): String = content.type.label

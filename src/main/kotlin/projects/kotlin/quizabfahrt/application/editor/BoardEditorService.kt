@@ -114,7 +114,11 @@ class BoardEditorService(private val compiler: CompilationEngine) {
     fun updateQuestion(draft: BoardDraft, categoryIndex: Int, questionIndex: Int, content: ContentInput, settings: SettingsInput) =
         change(draft) {
             val question = draft.getQuestion(categoryIndex, questionIndex)
-            val changed = question.copy(content = buildContent<EQuestionTypes>(content), settings = buildSettings(settings))
+            val changed = try {
+                question.copy(content = buildContent<EQuestionTypes>(content), settings = buildSettings(settings))
+            } catch (e: ContentException) {
+                throw BoardEditorException(e.message.orEmpty())
+            }
             draft.setQuestion(categoryIndex, questionIndex, changed)
         }
 

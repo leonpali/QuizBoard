@@ -16,10 +16,7 @@ data class Content<T : ContentType> private constructor(val type: T, val values:
             val present = ContentField.entries
                 .mapNotNull { field -> values[field]?.trim()?.takeIf { it.isNotEmpty() }?.let { field to it } }
                 .toMap()
-            val missing = type.fields - present.keys
-            if (missing.isNotEmpty()) {
-                throw ContentException("Für den Typ „${type.label}“ fehlt: ${missing.joinToString { it.label }}")
-            }
+            type.requireFields(present.keys, "den Typ")
             return Content(type, present)
         }
     }

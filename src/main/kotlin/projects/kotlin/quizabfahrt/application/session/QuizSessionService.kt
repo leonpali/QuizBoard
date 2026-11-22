@@ -6,7 +6,6 @@ import org.springframework.context.ApplicationEventPublisher
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import projects.kotlin.quizabfahrt.model.Board
-import projects.kotlin.quizabfahrt.model.EInputTypes
 import projects.kotlin.quizabfahrt.model.Question
 import projects.kotlin.quizabfahrt.model.QuestionRef
 import java.nio.file.Files
@@ -107,8 +106,8 @@ class QuizSessionService(
         return session to player
     }
 
-    fun openQuestion(session: QuizSession, ref: QuestionRef, input: EInputTypes) {
-        session.openQuestion(ref, input)
+    fun openQuestion(session: QuizSession, ref: QuestionRef, question: Question) {
+        session.openQuestion(ref, question)
         events.publishEvent(SessionChangedEvent(session))
     }
 

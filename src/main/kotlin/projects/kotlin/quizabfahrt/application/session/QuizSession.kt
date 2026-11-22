@@ -42,9 +42,9 @@ class QuizSession(
     }
 
     @Synchronized
-    fun openQuestion(ref: QuestionRef, inputType: EInputTypes) {
+    fun openQuestion(ref: QuestionRef, question: Question) {
         askedQuestions.add(ref)
-        input.open(ref, inputType)
+        input.open(ref, question)
     }
 
     @Synchronized
@@ -87,6 +87,7 @@ class QuizSession(
             name = player.name,
             score = scores.getScore(player),
             inputKey = input.type.key,
+            inputData = input.getPlayerData(),
             inputOpen = input.isOpen,
             submitted = index >= 0,
             position = if (index >= 0) index + 1 else null,
@@ -112,36 +113,39 @@ class QuizSession(
 private data class Submission(val player: Player, val value: String?)
 
 private class QuestionInput {
-    private var currentQuestion: QuestionRef? = null
+    private var currentRef: QuestionRef? = null
+    private var currentQuestion: Question? = null
     private val submissions = HashMap<QuestionRef, MutableList<Submission>>()
 
-    var type = EInputTypes.DEFAULT
-        private set
+    val type: EInputTypes get() = currentQuestion?.input ?: EInputTypes.DEFAULT
     var isOpen = false
         private set
 
-    fun open(ref: QuestionRef, input: EInputTypes) {
-        currentQuestion = ref
-        type = input
+    fun open(ref: QuestionRef, question: Question) {
+        currentRef = ref
+        currentQuestion = question
         isOpen = true
     }
 
     fun close(): Boolean = isOpen.also { isOpen = false }
 
-    fun submit(player: Player, value: String?): Boolean {
-        val ref = currentQuestion
-        if (!isOpen || ref == null) return false
-        val cleaned = type.cleanValue(value)
-        if (!type.accepts(cleaned)) return false
+    fun submit(player: Player, raw: String?): Boolean {
+        val ref = currentRef
+        val question = currentQuestion
+        if (!isOpen || ref == null || question == null) return false
+        val value = raw?.takeIf { type.takesValue }?.let { type.readValue(it, question) }
+        if (type.takesValue && value == null) return false
         val questionSubmissions = submissions.getOrPut(ref) { mutableListOf() }
         if (questionSubmissions.any { it.player == player }) return false
-        questionSubmissions.add(Submission(player, cleaned))
+        questionSubmissions.add(Submission(player, value))
         return true
     }
 
+    fun getPlayerData(): Map<String, Any> = currentQuestion?.let { type.getPlayerData(it) }.orEmpty()
+
     fun getSubmissions(ref: QuestionRef): List<Submission> = submissions[ref].orEmpty()
 
-    fun getCurrentSubmissions(): List<Submission> = currentQuestion?.let(::getSubmissions).orEmpty()
+    fun getCurrentSubmissions(): List<Submission> = currentRef?.let(::getSubmissions).orEmpty()
 }
 
 private data class QuestionResult(val outcome: Outcome, val points: Int)
@@ -180,6 +184,7 @@ data class PlayerState(
     val name: String,
     val score: Int,
     val inputKey: String,
+    val inputData: Map<String, Any>,
     val inputOpen: Boolean,
     val submitted: Boolean,
     val position: Int?,
