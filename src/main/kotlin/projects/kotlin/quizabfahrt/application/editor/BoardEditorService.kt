@@ -11,9 +11,10 @@ import projects.kotlin.quizabfahrt.model.ContentException
 import projects.kotlin.quizabfahrt.model.ContentField
 import projects.kotlin.quizabfahrt.model.ContentType
 import projects.kotlin.quizabfahrt.model.EAnswerTypes
+import projects.kotlin.quizabfahrt.model.EInputTypes
 import projects.kotlin.quizabfahrt.model.EQuestionTypes
 import projects.kotlin.quizabfahrt.model.Question
-import projects.kotlin.quizabfahrt.model.contentTypeOf
+import projects.kotlin.quizabfahrt.model.typeOf
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID
@@ -114,7 +115,11 @@ class BoardEditorService(private val compiler: CompilationEngine) {
         val points = input.points?.trim()?.toIntOrNull()?.takeIf { it in 0..MAX_POINTS }
             ?: throw BoardEditorException("Die Punkte müssen eine ganze Zahl zwischen 0 und $MAX_POINTS sein.")
         val question = draft.getQuestion(categoryIndex, questionIndex)
-        draft.setQuestion(categoryIndex, questionIndex, question.copy(points = points, content = buildContent<EQuestionTypes>(input)))
+        val inputType = input.inputKey?.let { typeOf<EInputTypes>(it) ?: throw BoardEditorException("Unbekannte Eingabe '$it'.") }
+        draft.setQuestion(
+            categoryIndex, questionIndex,
+            question.copy(points = points, content = buildContent<EQuestionTypes>(input), input = inputType ?: question.input),
+        )
     }
 
     fun updateAnswer(draft: BoardDraft, categoryIndex: Int, questionIndex: Int, input: ContentInput) = change(draft) {
@@ -166,7 +171,7 @@ class BoardEditorService(private val compiler: CompilationEngine) {
     )
 
     private inline fun <reified T> buildContent(input: ContentInput): Content<T> where T : Enum<T>, T : ContentType {
-        val type = contentTypeOf<T>(input.typeKey) ?: throw BoardEditorException("Unbekannter Typ '${input.typeKey}'.")
+        val type = typeOf<T>(input.typeKey) ?: throw BoardEditorException("Unbekannter Typ '${input.typeKey}'.")
         val values = input.getValues().mapValues { (field, value) -> cleanField(field, value) }
         return try {
             Content.of(type, values)

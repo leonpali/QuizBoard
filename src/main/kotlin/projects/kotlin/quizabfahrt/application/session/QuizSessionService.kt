@@ -6,6 +6,7 @@ import org.springframework.context.ApplicationEventPublisher
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import projects.kotlin.quizabfahrt.model.Board
+import projects.kotlin.quizabfahrt.model.EInputTypes
 import projects.kotlin.quizabfahrt.model.QuestionRef
 import java.nio.file.Files
 import java.nio.file.Path
@@ -105,17 +106,17 @@ class QuizSessionService(
         return session to player
     }
 
-    fun openQuestion(session: QuizSession, ref: QuestionRef) {
-        session.openQuestion(ref)
+    fun openQuestion(session: QuizSession, ref: QuestionRef, input: EInputTypes) {
+        session.openQuestion(ref, input)
         events.publishEvent(SessionChangedEvent(session))
     }
 
-    fun closeBuzzing(session: QuizSession) {
-        if (session.closeBuzzing()) events.publishEvent(SessionChangedEvent(session))
+    fun closeInput(session: QuizSession) {
+        if (session.closeInput()) events.publishEvent(SessionChangedEvent(session))
     }
 
-    fun buzz(session: QuizSession, player: Player): PlayerState {
-        if (session.buzz(player)) events.publishEvent(SessionChangedEvent(session))
+    fun submit(session: QuizSession, player: Player, value: String?): PlayerState {
+        if (session.submit(player, value)) events.publishEvent(SessionChangedEvent(session))
         return session.getPlayerState(player)
     }
 

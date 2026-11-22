@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<body>
+    <aside th:fragment="panel" id="submission-panel" class="submission-panel" hidden>
+        <link rel="stylesheet" th:href="@{/css/submissions.css}">
+        <p id="submission-status" class="submission-status"></p>
+        <ol id="submission-list" class="submission-list"></ol>
+        <script th:attr="nonce=${cspNonce}">
+            (() => {
+                const panel = document.getElementById('submission-panel');
+                const status = document.getElementById('submission-status');
+                const list = document.getElementById('submission-list');
+                const events = new EventSource('/host/events');
+
+                events.addEventListener('state', e => {
+                    const state = JSON.parse(e.data);
+                    panel.hidden = state.players.length === 0;
+                    status.textContent = state.input + (state.inputOpen ? ' offen' : ' geschlossen');
+                    status.classList.toggle('open', state.inputOpen);
+                    list.replaceChildren(...state.submissions.map(name => {
+                        const li = document.createElement('li');
+                        li.textContent = name;
+                        return li;
+                    }));
+                });
+                events.addEventListener('ended', () => location.href = '/');
+            })();
+        </script>
+    </aside>
+</body>
+</html>

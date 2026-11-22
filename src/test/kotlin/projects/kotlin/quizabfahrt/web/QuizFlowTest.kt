@@ -88,8 +88,9 @@ class QuizFlowTest {
     private fun page(path: String, cookie: Cookie): String =
         mockMvc.get(path) { cookie(cookie) }.andExpect { status { isOk() } }.andReturn().response.contentAsString
 
-    private fun buzz(player: Cookie): String =
-        mockMvc.post("/play/buzz") { cookie(player) }.andExpect { status { isOk() } }.andReturn().response.contentAsString
+    private fun submit(player: Cookie, value: String? = null): String =
+        mockMvc.post("/play/submit") { cookie(player); value?.let { param("value", it) } }
+            .andExpect { status { isOk() } }.andReturn().response.contentAsString
 
     // Question n (1-based) of the first category on the first board
     private fun q(n: Int) = "/board/1/category/1/question/$n"
@@ -187,23 +188,53 @@ class QuizFlowTest {
         assertContains(joinError(quiz.code, "Dana"), "Das Quiz ist voll.")
     }
 
-    // Buzzing
+    // Participant input
 
     @Test
-    fun `buzzers only work while a question is open, once per participant, in order`() {
+    fun `input only works while a question is open, once per participant, in order`() {
         val quiz = createQuiz()
         val anna = join(quiz, "Anna")
         val ben = join(quiz, "Ben")
 
-        assertContains(buzz(anna), "\"buzzed\":false")
+        assertContains(submit(anna), "\"submitted\":false")
 
         openQuestion(quiz, 3)
-        assertContains(buzz(ben), "\"position\":1")
-        assertContains(buzz(anna), "\"position\":2")
-        assertContains(buzz(ben), "\"position\":1")
+        assertContains(submit(ben), "\"position\":1")
+        assertContains(submit(anna), "\"position\":2")
+        assertContains(submit(ben), "\"position\":1")
 
         page("/board/1/category/1/question/3/answer", quiz.host)
-        assertContains(buzz(anna), "\"buzzingOpen\":false")
+        assertContains(submit(anna), "\"inputOpen\":false")
+    }
+
+    @Test
+    fun `text input questions collect answers that the host sees when scoring`() {
+        val board = String(boardFile("Board_1.txt", "Kat").bytes)
+            .replaceFirst("points: 100", "points: 100\n    input: text")
+        val quiz = createQuiz(MockMultipartFile("boards", "Board_1.txt", "text/plain", board.toByteArray()))
+        val anna = join(quiz, "Anna")
+        join(quiz, "Ben")
+
+        openQuestion(quiz, 1)
+        assertContains(submit(anna, "Paris"), "\"value\":\"Paris\"")
+
+        val scoring = page("/board/1/category/1/question/1/score", quiz.host)
+        assertContains(scoring, "<td class=\"value\">Paris</td>")
+        assertTrue(scoring.indexOf("Anna") < scoring.indexOf("Ben"))
+
+        openQuestion(quiz, 2)
+        assertContains(submit(anna, "ignored"), "\"value\":null")
+        assertFalse("class=\"value\"" in page("/board/1/category/1/question/2/score", quiz.host))
+    }
+
+    @Test
+    fun `the participant page contains every input type`() {
+        val quiz = createQuiz()
+        val play = page("/play", join(quiz, "Anna"))
+
+        assertContains(play, "data-input=\"buzzer\"")
+        assertContains(play, "data-input=\"text\"")
+        assertContains(play, "registerInput('text'")
     }
 
     @Test
@@ -312,19 +343,19 @@ class QuizFlowTest {
         val anna = join(quiz, "Anna")
         join(quiz, "Ben")
         openQuestion(quiz, 3)
-        buzz(anna)
+        submit(anna)
 
         val rows = page("/board/1/category/1/question/3/score", quiz.host)
         assertTrue(rows.indexOf("Anna") < rows.indexOf("Ben"))
 
         score(quiz, 3, playerId = 1, outcome = "CORRECT")
         score(quiz, 3, playerId = 2, outcome = "WRONG")
-        assertContains(buzz(anna), "\"score\":300")
+        assertContains(submit(anna), "\"score\":300")
         val totals = Regex("class=\"total\">(-?\\d+)").findAll(page("/board/1/category/1/question/3/score", quiz.host)).map { it.groupValues[1] }.toList()
         assertEquals(listOf("300", "-150"), totals)
 
         score(quiz, 3, playerId = 1, outcome = "CORRECT")
-        assertContains(buzz(anna), "\"score\":0")
+        assertContains(submit(anna), "\"score\":0")
     }
 
     @Test
@@ -372,7 +403,7 @@ class QuizFlowTest {
 
         mockMvc.get("/host") { cookie(quiz.host) }.andExpect { redirectedUrl("/") }
         mockMvc.get("/play") { cookie(anna) }.andExpect { redirectedUrl("/join") }
-        mockMvc.post("/play/buzz") { cookie(anna) }.andExpect { status { isUnauthorized() } }
+        mockMvc.post("/play/submit") { cookie(anna) }.andExpect { status { isUnauthorized() } }
     }
 
     @Test

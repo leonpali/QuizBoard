@@ -4,7 +4,9 @@ import org.junit.jupiter.api.Test
 import projects.kotlin.quizabfahrt.application.service.parser.BoardFile
 import projects.kotlin.quizabfahrt.application.service.parser.CompilationEngine
 import projects.kotlin.quizabfahrt.model.EAnswerTypes
+import projects.kotlin.quizabfahrt.model.EInputTypes
 import projects.kotlin.quizabfahrt.model.EQuestionTypes
+import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
@@ -182,8 +184,24 @@ class BoardEditorServiceTest {
     }
 
     @Test
+    fun `the input type can be changed and is kept when the form doesn't send one`() {
+        val draft = boardWith("K" to 1)
+        assertEquals(EInputTypes.BUZZER, draft.getQuestion(0, 0).input)
+
+        editor.updateQuestion(draft, 0, 0, questionInput(EQuestionTypes.TEXT, "Frage", null, "100").copy(inputKey = "text"))
+        assertEquals(EInputTypes.TEXT, draft.getQuestion(0, 0).input)
+
+        editor.updateQuestion(draft, 0, 0, questionInput(EQuestionTypes.TEXT, "Frage", null, "200"))
+        assertEquals(EInputTypes.TEXT, draft.getQuestion(0, 0).input)
+        assertContains(draft.toText(), "input: text")
+    }
+
+    @Test
     fun `unknown type keys are rejected`() {
         val draft = boardWith("K" to 1)
+        assertFailsWith<BoardEditorException> {
+            editor.updateQuestion(draft, 0, 0, questionInput(EQuestionTypes.TEXT, "Frage", null, "100").copy(inputKey = "gesten"))
+        }
         assertFailsWith<BoardEditorException> { editor.updateQuestion(draft, 0, 0, ContentInput("video", emptyMap(), "100")) }
         assertFailsWith<BoardEditorException> { editor.updateAnswer(draft, 0, 0, ContentInput("lineup", mapOf("text" to "x"))) }
     }

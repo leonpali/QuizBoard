@@ -43,6 +43,14 @@
                     <input class="text-input points-input" type="number" name="points" th:value="${form.points}" min="0" max="100000" step="1" required>
                 </label>
 
+                <label class="field" th:unless="${#lists.isEmpty(inputs)}">
+                    <span class="field-title">Eingabe der Teilnehmer</span>
+                    <select class="text-input" name="input">
+                        <option th:each="input : ${inputs}" th:value="${input.key}" th:selected="${form.isInput(input.key)}"
+                                th:text="${input.label}">Buzzer</option>
+                    </select>
+                </label>
+
                 <div class="form-actions">
                     <button type="submit" class="primary-button">Speichern</button>
                     <a class="link-button" th:href="@{'/editor/categories/' + ${c}}">Abbrechen</a>

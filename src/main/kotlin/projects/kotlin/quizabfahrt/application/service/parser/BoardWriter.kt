@@ -14,6 +14,7 @@ object BoardWriter {
                 appendLine("        question_${q + 1}:")
                 appendContent(question.content, "            ")
                 appendLine("            points: ${question.points}")
+                appendLine("            input: ${question.input.key}")
                 appendLine("            answer:")
                 appendContent(question.answer, "                ")
             }

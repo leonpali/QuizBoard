@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<body>
+    <form th:fragment="content" class="text-entry">
+        <input class="text-entry-field" type="text" th:maxlength="${input.maxLength}" autocomplete="off"
+               placeholder="Deine Antwort" aria-label="Deine Antwort" disabled>
+        <button class="text-entry-send" disabled>Abschicken</button>
+        <script th:attr="nonce=${cspNonce}">
+            registerInput('text', (section, submit) => {
+                const form = section.querySelector('.text-entry');
+                const field = section.querySelector('.text-entry-field');
+                const send = section.querySelector('.text-entry-send');
+                let wasOpen = false;
+                form.addEventListener('submit', e => {
+                    e.preventDefault();
+                    if (field.value.trim() === '') return;
+                    field.disabled = send.disabled = true;
+                    submit(field.value);
+                });
+
+                return state => {
+                    if (state.inputOpen && !wasOpen && !state.submitted) field.value = '';
+                    wasOpen = state.inputOpen;
+                    if (state.submitted) field.value = state.value;
+                    field.disabled = send.disabled = state.submitted || !state.inputOpen;
+                    if (state.submitted) return 'Antwort abgeschickt';
+                    return state.inputOpen ? 'Antwort eintippen und abschicken' : null;
+                };
+            });
+        </script>
+    </form>
+</body>
+</html>

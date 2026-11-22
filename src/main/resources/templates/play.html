@@ -3,8 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-    <title>Buzzer</title>
+    <title>Quiz</title>
     <link rel="stylesheet" th:href="@{/css/play.css}" />
+    <script th:attr="nonce=${cspNonce}">
+        const inputSetups = new Map();
+        // setup(section, submit) returns render(state), which updates the section and returns a status text or null
+        function registerInput(key, setup) {
+            inputSetups.set(key, setup);
+        }
+    </script>
 </head>
 <body>
     <main class="play">
@@ -14,39 +21,38 @@
             <span>Quiz <span th:text="${code}">123456</span></span>
         </header>
 
-        <button id="buzzer" class="buzzer" disabled>…</button>
+        <section th:each="input : ${inputs}" class="input" th:attr="data-input=${input.key}" hidden>
+            <div th:replace="~{inputs/__${input.key}__ :: content}"></div>
+        </section>
         <p id="status" class="status">Verbinde…</p>
     </main>
 
     <script th:attr="nonce=${cspNonce}">
-        const buzzer = document.getElementById('buzzer');
         const status = document.getElementById('status');
         const score = document.getElementById('score');
+        const sections = [...document.querySelectorAll('[data-input]')];
+        const renderers = new Map(sections.map(section => [section.dataset.input, inputSetups.get(section.dataset.input)(section, submit)]));
 
         function render(state) {
             score.textContent = state.score + ' Punkte';
-            if (state.buzzed) {
-                buzzer.disabled = true;
-                buzzer.className = 'buzzer buzzed';
-                buzzer.textContent = state.position;
-                status.textContent = 'Gebuzzert! Du warst Nr. ' + state.position + '.';
-            } else if (state.buzzingOpen) {
-                buzzer.disabled = false;
-                buzzer.className = 'buzzer open';
-                buzzer.textContent = 'BUZZ';
-                status.textContent = 'Frage läuft – schnell sein!';
-            } else {
-                buzzer.disabled = true;
-                buzzer.className = 'buzzer';
-                buzzer.textContent = '…';
-                status.textContent = 'Warte auf die nächste Frage';
+            sections.forEach(section => section.hidden = section.dataset.input !== state.input);
+            status.textContent = renderers.get(state.input)(state) ?? 'Warte auf die nächste Frage';
+        }
+
+        async function submit(value) {
+            const body = value === undefined ? undefined : new URLSearchParams({ value });
+            const response = await fetch('/play/submit', { method: 'POST', body });
+            if (!response.ok) {
+                ended('Das Quiz ist nicht mehr verfügbar.');
+                return;
             }
+            const state = await response.json();
+            if (state.submitted && navigator.vibrate) navigator.vibrate(150);
+            render(state);
         }
 
         function ended(message) {
-            buzzer.disabled = true;
-            buzzer.className = 'buzzer';
-            buzzer.textContent = '–';
+            sections.forEach(section => section.querySelectorAll('button, input').forEach(element => element.disabled = true));
             status.innerHTML = '';
             status.append(message + ' ');
             const link = document.createElement('a');
@@ -65,18 +71,6 @@
             if (events.readyState === EventSource.CLOSED) ended('Das Quiz ist nicht mehr verfügbar.');
             else status.textContent = 'Verbindung unterbrochen, verbinde neu…';
         };
-
-        buzzer.addEventListener('click', async () => {
-            buzzer.disabled = true;
-            const response = await fetch('/play/buzz', { method: 'POST' });
-            if (!response.ok) {
-                ended('Das Quiz ist nicht mehr verfügbar.');
-                return;
-            }
-            const state = await response.json();
-            if (state.buzzed && navigator.vibrate) navigator.vibrate(150);
-            render(state);
-        });
     </script>
 </body>
 </html>

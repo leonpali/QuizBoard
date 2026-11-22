@@ -37,10 +37,15 @@ h1 {
     border-top: 1px solid #dddddd;
 }
 
-.buzz-position {
+.position {
     width: 3em;
     font-weight: bold;
     color: #a714d9;
+}
+
+.value {
+    font-style: italic;
+    overflow-wrap: anywhere;
 }
 
 .total {

@@ -1,4 +1,4 @@
-.buzz-panel {
+.submission-panel {
     position: fixed;
     top: 20px;
     right: 20px;
@@ -13,27 +13,27 @@
     font-family: sans-serif;
 }
 
-.buzz-panel[hidden] {
+.submission-panel[hidden] {
     display: none;
 }
 
-.buzz-status {
+.submission-status {
     margin: 0 0 10px;
     color: #777777;
     font-weight: bold;
 }
 
-.buzz-status.open {
+.submission-status.open {
     color: #a714d9;
 }
 
-.buzz-list {
+.submission-list {
     margin: 0;
     padding-left: 1.5em;
     font-size: 1.6em;
 }
 
-.buzz-list li:first-child {
+.submission-list li:first-child {
     font-weight: bold;
     color: #a714d9;
 }

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<body>
+    <div th:fragment="content">
+        <button class="buzzer" disabled>…</button>
+        <script th:attr="nonce=${cspNonce}">
+            registerInput('buzzer', (section, submit) => {
+                const buzzer = section.querySelector('.buzzer');
+                buzzer.addEventListener('click', () => {
+                    buzzer.disabled = true;
+                    submit();
+                });
+
+                return state => {
+                    buzzer.disabled = state.submitted || !state.inputOpen;
+                    if (state.submitted) {
+                        buzzer.className = 'buzzer buzzed';
+                        buzzer.textContent = state.position;
+                        return 'Gebuzzert! Du warst Nr. ' + state.position + '.';
+                    }
+                    buzzer.className = state.inputOpen ? 'buzzer open' : 'buzzer';
+                    buzzer.textContent = state.inputOpen ? 'BUZZ' : '…';
+                    return state.inputOpen ? 'Frage läuft – schnell sein!' : null;
+                };
+            });
+        </script>
+    </div>
+</body>
+</html>

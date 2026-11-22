@@ -14,6 +14,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter
 import projects.kotlin.quizabfahrt.application.session.PlayerState
 import projects.kotlin.quizabfahrt.application.session.QuizSessionException
 import projects.kotlin.quizabfahrt.application.session.QuizSessionService
+import projects.kotlin.quizabfahrt.model.EInputTypes
 
 @Controller
 class PlayerController(private val sessions: QuizSessionService, private val broadcaster: QuizEventBroadcaster) {
@@ -61,6 +62,7 @@ class PlayerController(private val sessions: QuizSessionService, private val bro
         val (session, player) = sessions.findPlayer(playerToken) ?: return "redirect:/join"
         model.addAttribute("code", session.code)
         model.addAttribute("name", player.name)
+        model.addAttribute("inputs", EInputTypes.entries)
         return "play"
     }
 
@@ -70,9 +72,12 @@ class PlayerController(private val sessions: QuizSessionService, private val bro
         return sseResponse(broadcaster.subscribePlayer(session, player))
     }
 
-    @PostMapping("/play/buzz")
-    fun buzz(@CookieValue(SessionCookies.PLAYER, required = false) playerToken: String?): ResponseEntity<PlayerState> {
+    @PostMapping("/play/submit")
+    fun submit(
+        @RequestParam(required = false) value: String?,
+        @CookieValue(SessionCookies.PLAYER, required = false) playerToken: String?,
+    ): ResponseEntity<PlayerState> {
         val (session, player) = sessions.findPlayer(playerToken) ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
-        return ResponseEntity.ok(sessions.buzz(session, player))
+        return ResponseEntity.ok(sessions.submit(session, player, value))
     }
 }

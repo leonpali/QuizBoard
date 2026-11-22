@@ -12,16 +12,18 @@
         <table class="score-table">
             <thead>
                 <tr>
-                    <th>Buzz</th>
+                    <th>#</th>
                     <th>Name</th>
+                    <th th:if="${question.hasInputValues()}">Eingabe</th>
                     <th>Stand</th>
                     <th></th>
                 </tr>
             </thead>
             <tbody>
                 <tr th:each="row : ${rows}">
-                    <td class="buzz-position" th:text="${row.buzzPosition} ? ${row.buzzPosition} + '.' : ''">1.</td>
+                    <td class="position" th:text="${row.position} ? ${row.position} + '.' : ''">1.</td>
                     <td class="name" th:text="${row.name}">Name</td>
+                    <td class="value" th:if="${question.hasInputValues()}" th:text="${row.value}">Antwort</td>
                     <td class="total" th:text="${row.score}">0</td>
                     <td class="actions">
                         <form th:action="@{${ref.toPath('/score')}}" method="post">

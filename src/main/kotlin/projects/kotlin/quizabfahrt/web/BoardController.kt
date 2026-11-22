@@ -20,7 +20,7 @@ class BoardController(private val questionService: QuestionService, private val 
     fun board(model: Model, @PathVariable board: Int, @HostSession session: QuizSession): String {
         val boardIndex = QuestionRef.getBoardIndex(board)
         val categories = questionService.getBoard(session, boardIndex).categories
-        sessions.closeBuzzing(session)
+        sessions.closeInput(session)
 
         val rows = (0 until CompilationEngine.QUESTIONS_PER_CATEGORY).map { row ->
             categories.mapIndexed { category, it ->
@@ -39,8 +39,7 @@ class BoardController(private val questionService: QuestionService, private val 
 
     @PostMapping("/board/{board}/category/{category}/question/{question}/open")
     fun openQuestion(@HostSession session: QuizSession, ref: QuestionRef): String {
-        questionService.getQuestion(session, ref)
-        sessions.openQuestion(session, ref)
+        sessions.openQuestion(session, ref, questionService.getQuestion(session, ref).input)
         return "redirect:${ref.toPath()}"
     }
 }

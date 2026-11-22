@@ -22,6 +22,10 @@
 #   img        Zeigt das Bild der Antwort
 #   textimage  Zeigt Bild und Text der Antwort
 #
+# Eingabe der Teilnehmer (input unter question, optional, Standard ist buzzer):
+#   buzzer  Teilnehmer buzzern, die Reihenfolge wird angezeigt
+#   text    Teilnehmer tippen eine Antwort ein, sie erscheint beim Punktevergeben
+#
 # Punkte: richtige Antwort = volle Punkte, falsche Antwort = minus die Hälfte.
 
 category_1:
@@ -32,6 +36,7 @@ category_1:
             text: Wie heißt die Hauptstadt von Frankreich?
             img: null
             points: 100
+            input: text
             answer:
                 type: text
                 text: Paris

@@ -73,3 +73,48 @@ html, body {
 .status a {
     color: #ca49f5;
 }
+
+.input {
+    display: contents;
+}
+
+.input[hidden] {
+    display: none;
+}
+
+.text-entry {
+    width: min(90vw, 500px);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.text-entry-field {
+    padding: 16px;
+    border: 2px solid #555555;
+    border-radius: 10px;
+    background: #2a2a2a;
+    color: white;
+    font-size: 1.4em;
+    user-select: text;
+    -webkit-user-select: text;
+}
+
+.text-entry-field:disabled {
+    color: #aaaaaa;
+}
+
+.text-entry-send {
+    padding: 16px;
+    border: none;
+    border-radius: 10px;
+    background: #a714d9;
+    color: black;
+    font-size: 1.4em;
+    font-weight: bold;
+}
+
+.text-entry-send:disabled {
+    background: #555555;
+    color: #999999;
+}

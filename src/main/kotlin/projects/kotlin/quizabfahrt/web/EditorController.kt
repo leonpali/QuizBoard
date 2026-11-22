@@ -23,6 +23,7 @@ import projects.kotlin.quizabfahrt.application.editor.MoveDirection
 import projects.kotlin.quizabfahrt.application.service.parser.CompilationEngine
 import projects.kotlin.quizabfahrt.model.ContentType
 import projects.kotlin.quizabfahrt.model.EAnswerTypes
+import projects.kotlin.quizabfahrt.model.EInputTypes
 import projects.kotlin.quizabfahrt.model.EQuestionTypes
 import java.time.Duration
 import java.time.Instant
@@ -129,7 +130,7 @@ class EditorController(private val editor: BoardEditorService) {
     @GetMapping("/categories/{c}/questions/{q}/question")
     fun questionForm(model: Model, @PathVariable c: Int, @PathVariable q: Int, @EditorDraft draft: BoardDraft): String {
         val question = synchronized(draft) { draft.getQuestion(c, q) }
-        return questionPage(model, draft, c, q, ContentInput.of(question.content, question.points))
+        return questionPage(model, draft, c, q, ContentInput.of(question))
     }
 
     @PostMapping("/categories/{c}/questions/{q}/question")
@@ -230,6 +231,7 @@ class EditorController(private val editor: BoardEditorService) {
         model.addAttribute("typeHints", types.mapNotNull { type -> type.hint?.let { "${type.label}: $it" } })
         model.addAttribute("fields", FormField.of(types))
         model.addAttribute("hasPoints", form.points != null)
+        model.addAttribute("inputs", if (form.inputKey != null) EInputTypes.entries else emptyList())
         return "editorContent"
     }
 }

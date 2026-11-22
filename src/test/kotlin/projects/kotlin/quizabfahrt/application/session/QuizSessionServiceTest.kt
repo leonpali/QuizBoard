@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.springframework.context.ApplicationEventPublisher
 import projects.kotlin.quizabfahrt.model.Board
+import projects.kotlin.quizabfahrt.model.EInputTypes
 import projects.kotlin.quizabfahrt.model.QuestionRef
 import java.nio.file.Path
 import java.time.Duration
@@ -83,18 +84,18 @@ class QuizSessionServiceTest {
     }
 
     @Test
-    fun `buzzing only works while a question is open`() {
+    fun `input only works while a question is open`() {
         val (_, anna) = service.join(session.code, "Anna", "1.1.1.1", null)
 
-        assertFalse(service.buzz(session, anna).buzzed)
+        assertFalse(service.submit(session, anna, null).submitted)
 
-        service.openQuestion(session, QuestionRef(0, 0, 3))
-        assertEquals(1, service.buzz(session, anna).position)
+        service.openQuestion(session, QuestionRef(0, 0, 3), EInputTypes.BUZZER)
+        assertEquals(1, service.submit(session, anna, null).position)
 
-        service.closeBuzzing(session)
+        service.closeInput(session)
         val state = session.getPlayerState(anna)
-        assertFalse(state.buzzingOpen)
-        assertTrue(state.buzzed)
+        assertFalse(state.inputOpen)
+        assertTrue(state.submitted)
     }
 
     @Test
@@ -102,7 +103,7 @@ class QuizSessionServiceTest {
         val ref = QuestionRef(0, 1, 4)
         assertFalse(session.isAsked(ref))
 
-        service.openQuestion(session, ref)
+        service.openQuestion(session, ref, EInputTypes.BUZZER)
 
         assertTrue(session.isAsked(ref))
         assertFalse(session.isAsked(QuestionRef(0, 1, 3)))
@@ -113,15 +114,44 @@ class QuizSessionServiceTest {
         val (_, anna) = service.join(session.code, "Anna", "1.1.1.1", null)
         val (_, ben) = service.join(session.code, "Ben", "1.1.1.1", null)
 
-        service.openQuestion(session, QuestionRef(0, 0, 0))
-        service.buzz(session, ben)
-        service.buzz(session, anna)
-        service.buzz(session, ben)
-        assertEquals(listOf("Ben", "Anna"), session.getHostState().buzzes)
+        service.openQuestion(session, QuestionRef(0, 0, 0), EInputTypes.BUZZER)
+        service.submit(session, ben, null)
+        service.submit(session, anna, null)
+        service.submit(session, ben, null)
+        assertEquals(listOf("Ben", "Anna"), session.getHostState().submissions)
 
-        service.openQuestion(session, QuestionRef(0, 0, 1))
-        assertEquals(emptyList(), session.getHostState().buzzes)
-        assertEquals(1, service.buzz(session, anna).position)
+        service.openQuestion(session, QuestionRef(0, 0, 1), EInputTypes.BUZZER)
+        assertEquals(emptyList(), session.getHostState().submissions)
+        assertEquals(1, service.submit(session, anna, null).position)
+    }
+
+    @Test
+    fun `text input needs a value and keeps it for scoring`() {
+        val (_, anna) = service.join(session.code, "Anna", "1.1.1.1", null)
+        val (_, ben) = service.join(session.code, "Ben", "1.1.1.1", null)
+        val ref = QuestionRef(0, 0, 0)
+        service.openQuestion(session, ref, EInputTypes.TEXT)
+
+        assertFalse(service.submit(session, anna, "   ").submitted)
+        assertEquals("Paris", service.submit(session, anna, " Paris ").value)
+        assertEquals("Paris", service.submit(session, anna, "Lyon").value)
+        service.submit(session, ben, "x".repeat(500))
+
+        val rows = session.getScoringRows(ref)
+        assertEquals(listOf("Paris", "x".repeat(EInputTypes.TEXT.maxLength)), rows.map { it.value })
+        assertEquals("Texteingabe", session.getHostState().input)
+        assertEquals("text", session.getPlayerState(anna).input)
+    }
+
+    @Test
+    fun `buzzers ignore submitted values`() {
+        val (_, anna) = service.join(session.code, "Anna", "1.1.1.1", null)
+        service.openQuestion(session, QuestionRef(0, 0, 0), EInputTypes.BUZZER)
+
+        val state = service.submit(session, anna, "Paris")
+
+        assertTrue(state.submitted)
+        assertNull(state.value)
     }
 
     @Test
@@ -180,19 +210,19 @@ class QuizSessionServiceTest {
     }
 
     @Test
-    fun `scoring rows list buzzers first, in buzz order`() {
+    fun `scoring rows list submissions first, in order`() {
         val (_, anna) = service.join(session.code, "Anna", "1.1.1.1", null)
         val (_, ben) = service.join(session.code, "Ben", "1.1.1.1", null)
         val (_, cem) = service.join(session.code, "Cem", "1.1.1.1", null)
 
-        service.openQuestion(session, QuestionRef(0, 0, 2))
-        service.buzz(session, cem)
-        service.buzz(session, ben)
+        service.openQuestion(session, QuestionRef(0, 0, 2), EInputTypes.BUZZER)
+        service.submit(session, cem, null)
+        service.submit(session, ben, null)
         service.toggleResult(session, QuestionRef(0, 0, 2), ben.id, Outcome.CORRECT, 100)
 
         val rows = session.getScoringRows(QuestionRef(0, 0, 2))
         assertEquals(listOf("Cem", "Ben", "Anna"), rows.map { it.name })
-        assertEquals(listOf(1, 2, null), rows.map { it.buzzPosition })
+        assertEquals(listOf(1, 2, null), rows.map { it.position })
         assertEquals(listOf(null, Outcome.CORRECT, null), rows.map { it.outcome })
         assertEquals(anna.id, rows.last().playerId)
     }

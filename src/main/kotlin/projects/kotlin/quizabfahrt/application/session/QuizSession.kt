@@ -1,6 +1,7 @@
 package projects.kotlin.quizabfahrt.application.session
 
 import projects.kotlin.quizabfahrt.model.Board
+import projects.kotlin.quizabfahrt.model.EInputTypes
 import projects.kotlin.quizabfahrt.model.QuestionRef
 import java.nio.file.Path
 import java.time.Instant
@@ -11,6 +12,8 @@ enum class Outcome { CORRECT, WRONG }
 
 data class QuestionResult(val outcome: Outcome, val points: Int)
 
+data class Submission(val player: Player, val value: String?)
+
 class QuizSession(
     val code: String,
     val hostToken: String,
@@ -20,9 +23,10 @@ class QuizSession(
 ) {
     private val players = LinkedHashMap<String, Player>()
     private var currentQuestion: QuestionRef? = null
-    private var buzzingOpen = false
+    private var currentInput = EInputTypes.DEFAULT
+    private var inputOpen = false
     private val askedQuestions = HashSet<QuestionRef>()
-    private val buzzes = HashMap<QuestionRef, MutableList<Player>>()
+    private val submissions = HashMap<QuestionRef, MutableList<Submission>>()
     private val results = HashMap<QuestionRef, HashMap<Int, QuestionResult>>()
     private var nextPlayerId = 1
 
@@ -44,25 +48,28 @@ class QuizSession(
     }
 
     @Synchronized
-    fun openQuestion(ref: QuestionRef) {
+    fun openQuestion(ref: QuestionRef, input: EInputTypes) {
         askedQuestions.add(ref)
         currentQuestion = ref
-        buzzingOpen = true
+        currentInput = input
+        inputOpen = true
     }
 
     @Synchronized
-    fun closeBuzzing(): Boolean = buzzingOpen.also { buzzingOpen = false }
+    fun closeInput(): Boolean = inputOpen.also { inputOpen = false }
 
     @Synchronized
     fun isAsked(ref: QuestionRef): Boolean = ref in askedQuestions
 
     @Synchronized
-    fun buzz(player: Player): Boolean {
+    fun submit(player: Player, value: String?): Boolean {
         val ref = currentQuestion
-        if (!buzzingOpen || ref == null) return false
-        val order = buzzes.getOrPut(ref) { mutableListOf() }
-        if (player in order) return false
-        order.add(player)
+        if (!inputOpen || ref == null) return false
+        val cleaned = currentInput.cleanValue(value)
+        if (!currentInput.accepts(cleaned)) return false
+        val questionSubmissions = submissions.getOrPut(ref) { mutableListOf() }
+        if (questionSubmissions.any { it.player == player }) return false
+        questionSubmissions.add(Submission(player, cleaned))
         return true
     }
 
@@ -80,36 +87,33 @@ class QuizSession(
 
     @Synchronized
     fun getScoringRows(ref: QuestionRef): List<ScoringRow> {
-        val buzzOrder = buzzes[ref].orEmpty()
-        val questionResults = results[ref].orEmpty()
-        return (buzzOrder + players.values.filter { it !in buzzOrder }).map { player ->
-            ScoringRow(
-                playerId = player.id,
-                name = player.name,
-                buzzPosition = buzzOrder.indexOf(player).takeIf { it >= 0 }?.plus(1),
-                outcome = questionResults[player.id]?.outcome,
-                score = getScore(player),
-            )
-        }
+        val questionSubmissions = submissions[ref].orEmpty()
+        val submitted = questionSubmissions.mapIndexed { index, it -> getScoringRow(ref, it.player, index + 1, it.value) }
+        val waiting = players.values.filter { player -> questionSubmissions.none { it.player == player } }
+        return submitted + waiting.map { getScoringRow(ref, it, null, null) }
     }
 
     @Synchronized
     fun getHostState() = HostState(
         code = code,
         players = players.values.map { PlayerScore(it.name, getScore(it)) }.sortedByDescending { it.score },
-        buzzingOpen = buzzingOpen,
-        buzzes = getCurrentBuzzes().map { it.name },
+        input = currentInput.label,
+        inputOpen = inputOpen,
+        submissions = getCurrentSubmissions().map { it.player.name },
     )
 
     @Synchronized
     fun getPlayerState(player: Player): PlayerState {
-        val position = getCurrentBuzzes().indexOf(player)
+        val current = getCurrentSubmissions()
+        val index = current.indexOfFirst { it.player == player }
         return PlayerState(
             name = player.name,
             score = getScore(player),
-            buzzingOpen = buzzingOpen,
-            buzzed = position >= 0,
-            position = if (position >= 0) position + 1 else null,
+            input = currentInput.key,
+            inputOpen = inputOpen,
+            submitted = index >= 0,
+            position = if (index >= 0) index + 1 else null,
+            value = current.getOrNull(index)?.value,
         )
     }
 
@@ -123,7 +127,10 @@ class QuizSession(
 
     private fun getScore(player: Player): Int = results.values.sumOf { it[player.id]?.points ?: 0 }
 
-    private fun getCurrentBuzzes(): List<Player> = currentQuestion?.let { buzzes[it] }.orEmpty()
+    private fun getCurrentSubmissions(): List<Submission> = currentQuestion?.let { submissions[it] }.orEmpty()
+
+    private fun getScoringRow(ref: QuestionRef, player: Player, position: Int?, value: String?) =
+        ScoringRow(player.id, player.name, position, value, results[ref]?.get(player.id)?.outcome, getScore(player))
 }
 
 data class PlayerScore(val name: String, val score: Int)
@@ -133,22 +140,26 @@ data class RankedPlayer(val place: Int, val name: String, val score: Int)
 data class HostState(
     val code: String,
     val players: List<PlayerScore>,
-    val buzzingOpen: Boolean,
-    val buzzes: List<String>,
+    val input: String,
+    val inputOpen: Boolean,
+    val submissions: List<String>,
 )
 
 data class PlayerState(
     val name: String,
     val score: Int,
-    val buzzingOpen: Boolean,
-    val buzzed: Boolean,
+    val input: String,
+    val inputOpen: Boolean,
+    val submitted: Boolean,
     val position: Int?,
+    val value: String?,
 )
 
 data class ScoringRow(
     val playerId: Int,
     val name: String,
-    val buzzPosition: Int?,
+    val position: Int?,
+    val value: String?,
     val outcome: Outcome?,
     val score: Int,
 ) {

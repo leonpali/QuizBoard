@@ -18,7 +18,7 @@ class ScoreController(private val questionService: QuestionService, private val 
     @GetMapping("/board/{board}/category/{category}/question/{question}/score")
     fun score(model: Model, @HostSession session: QuizSession, ref: QuestionRef): String {
         val question = questionService.getQuestion(session, ref)
-        sessions.closeBuzzing(session)
+        sessions.closeInput(session)
 
         model.addAttribute("ref", ref)
         model.addAttribute("question", question)

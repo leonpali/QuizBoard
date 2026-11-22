@@ -21,7 +21,7 @@ class HostController(private val sessions: QuizSessionService, private val broad
 
     @GetMapping("/host")
     fun lobby(model: Model, @HostSession session: QuizSession): String {
-        sessions.closeBuzzing(session)
+        sessions.closeInput(session)
 
         model.addAttribute("code", session.code)
         model.addAttribute("joinUrl", ServletUriComponentsBuilder.fromCurrentContextPath().path("/join").toUriString())
@@ -32,7 +32,7 @@ class HostController(private val sessions: QuizSessionService, private val broad
 
     @GetMapping("/host/scoreboard")
     fun scoreboard(model: Model, @HostSession session: QuizSession): String {
-        sessions.closeBuzzing(session)
+        sessions.closeInput(session)
         val ranking = session.getRanking()
 
         val podium = listOf(2, 1, 3).mapNotNull { place ->

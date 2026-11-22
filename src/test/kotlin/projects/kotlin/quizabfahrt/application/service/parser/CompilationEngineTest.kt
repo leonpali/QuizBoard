@@ -2,6 +2,7 @@ package projects.kotlin.quizabfahrt.application.service.parser
 
 import org.junit.jupiter.api.Test
 import projects.kotlin.quizabfahrt.model.EAnswerTypes
+import projects.kotlin.quizabfahrt.model.EInputTypes
 import projects.kotlin.quizabfahrt.model.EQuestionTypes
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
@@ -29,6 +30,7 @@ class CompilationEngineTest {
             listOf(EAnswerTypes.TEXT, EAnswerTypes.TEXT, EAnswerTypes.IMAGE, EAnswerTypes.TEXTIMAGE, EAnswerTypes.TEXT, EAnswerTypes.TEXT),
             questions.map { it.answer.type },
         )
+        assertEquals(EInputTypes.TEXT, questions.first().input)
     }
 
     @Test
@@ -84,7 +86,7 @@ class CompilationEngineTest {
     fun `unknown and repeated fields are rejected with their line`() {
         assertContains(
             parseError(board("type: text\ntext: Frage\nunbekannt: x\npoints: 100\nanswer:\ntype: text\ntext: A")),
-            "Board_1.txt, Zeile 7: Unbekanntes Feld 'unbekannt: x' (erlaubt: type, points, text, img",
+            "Board_1.txt, Zeile 7: Unbekanntes Feld 'unbekannt: x' (erlaubt: type, points, input, text, img",
         )
         assertContains(parseError(board("type: text\ntext: Frage\ntext: Nochmal\npoints: 100\nanswer:\ntype: text\ntext: A")), "'text:' kommt doppelt vor")
     }
@@ -105,6 +107,21 @@ class CompilationEngineTest {
     }
 
     @Test
+    fun `the input type is optional and defaults to the buzzer`() {
+        val questions = parseLenient(board(
+            "type: text\ntext: F\npoints: 100\nanswer:\ntype: text\ntext: A",
+            "type: text\ntext: F\npoints: 100\ninput: text\nanswer:\ntype: text\ntext: A",
+            "type: text\ntext: F\npoints: 100\ninput: null\nanswer:\ntype: text\ntext: A",
+        )).categories.single().questions
+
+        assertEquals(listOf(EInputTypes.BUZZER, EInputTypes.TEXT, EInputTypes.BUZZER), questions.map { it.input })
+        assertContains(
+            parseError(board("type: text\ntext: F\npoints: 100\ninput: gesten\nanswer:\ntype: text\ntext: A")),
+            "Zeile 8: Unbekannte Eingabe 'gesten' (erlaubt: buzzer, text",
+        )
+    }
+
+    @Test
     fun `a question without answer section is rejected`() {
         assertContains(parseError(board("type: text\ntext: Frage\npoints: 100") + "\nquestion_2:"), "'answer:' erwartet, gefunden: 'question_2:'")
     }
@@ -118,5 +135,6 @@ class CompilationEngineTest {
 
         assertEquals(original, compiler.compile(listOf(BoardFile("b", written))).single())
         assertFalse("null" in written)
+        assertContains(written, "input: text")
     }
 }

@@ -1,6 +1,6 @@
 # QuizAbfahrt
 
-A Jeopardy-style quiz board for game nights. The host projects the board on a big screen; participants join from their phones and use them as buzzers. The host awards points after each question, and the game ends with a podium.
+A Jeopardy-style quiz board for game nights. The host projects the board on a big screen; participants join from their phones and use them as buzzers or to type in answers. The host awards points after each question, and the game ends with a podium.
 
 Built with Kotlin, Spring Boot and Thymeleaf. The UI is in German.
 
@@ -8,7 +8,7 @@ Built with Kotlin, Spring Boot and Thymeleaf. The UI is in German.
 
 - **Quizzes from text files**: write boards in a simple `.txt` format and upload them together with the images they use.
 - **Join with a code**: every quiz gets a 6-digit code; participants enter it and a name at `/join`.
-- **Phone buzzers**: buzzers unlock the moment the host opens a question. Each participant can buzz once per question, and the buzz order appears live on the big screen.
+- **Phone input**: participants' phones unlock the moment the host opens a question. Depending on the question, they buzz or type in an answer, once per question. The order appears live on the big screen, and typed answers show up on the scoring screen.
 - **Scoring**: after each answer, the host marks participants as correct (full points) or wrong (minus half the points). Several participants can score on the same question.
 - **Final scoreboard**: a podium for places 1–3 and a list of everyone else. Ties share a place, and the following places are skipped (1, 1, 3).
 - **Board editor**: create a board or edit an uploaded one in the browser, then download it as a `.txt` file.
@@ -36,14 +36,14 @@ To build a jar instead: `./gradlew build`, then `java -jar build/libs/QuizAbfahr
 
 1. **Create**: on the start page, upload one `.txt` file per board and all images the boards reference. Boards are ordered by file name (`Board_1`, `Board_2`, … `Board_10`). The page lists which referenced images are still missing before you submit.
 2. **Lobby**: the host lands on `/host`, which shows the join link, the code and the participants as they join. Put this on the projector.
-3. **Join**: participants open `/join` on their phones, enter the code and a name, and keep the buzzer page open.
-4. **Play**: the host picks a question on the board. Buzzers open, and the buzz order shows in the corner. "Weiter" reveals the answer and closes the buzzers.
-5. **Score**: after the answer, the host marks who was right or wrong. Clicking a highlighted button again undoes it.
+3. **Join**: participants open `/join` on their phones, enter the code and a name, and keep the page open.
+4. **Play**: the host picks a question on the board. Input opens on the phones (buzzer or text, as the question sets it), and the order of who buzzed or answered shows in the corner. "Weiter" reveals the answer and closes the input.
+5. **Score**: after the answer, the host sees who buzzed or what each participant typed, and marks who was right or wrong. Clicking a highlighted button again undoes it.
 6. **Finish**: "Nächstes Board →" moves on. After the last board it leads to the final scoreboard.
 
-The host is recognised by a cookie set when creating the quiz; only that device can open the board, questions, answers and uploaded images. Participants only ever see their buzzer.
+The host is recognised by a cookie set when creating the quiz; only that device can open the board, questions, answers and uploaded images. Participants only ever see their own input page.
 
-Without any participants, the app still works as a plain projected quiz board: the buzz panel and scoring screen are skipped.
+Without any participants, the app still works as a plain projected quiz board: the input panel and scoring screen are skipped.
 
 ## Board file format
 
@@ -82,6 +82,7 @@ category_2:
 | Answer `type` | `text`, `img`, `textimage` (image and text) |
 | `img` | File name of an uploaded image; leave it out, empty or `null` if the type doesn't need it |
 | `points` | Any whole number. A wrong answer deducts half (rounded down). |
+| `input` | Optional, how participants answer: `buzzer` (default) or `text` (they type an answer that the host sees when scoring) |
 
 Errors in a file are reported on upload with the file name and line number.
 
@@ -191,16 +192,16 @@ Then delete the local private key file. The deploy job runs in the GitHub enviro
 
 ```
 src/main/kotlin/projects/kotlin/quizabfahrt/
-├── model/                  Board, Category, Question, Answer
+├── model/                  Board, Category, Question, content and input types
 ├── application/
 │   ├── service/            QuizService (upload + validation), QuestionService
 │   │   └── parser/         CompilationEngine: parses the .txt board files
-│   ├── session/            QuizSession and QuizSessionService: codes, players, buzzing, scores, ranking
+│   ├── session/            QuizSession and QuizSessionService: codes, players, participant input, scores, ranking
 │   └── editor/             BoardDraft and BoardEditorService: in-memory drafts for the board editor
 └── web/                    Controllers, cookies, live updates (QuizEventBroadcaster)
 
 src/main/resources/
-├── templates/              Thymeleaf pages (start, lobby, board, questions, answers, scoring, scoreboard, join, buzzer)
+├── templates/              Thymeleaf pages (start, lobby, board, questions, answers, scoring, scoreboard, join, participant input)
 ├── static/css/             Styles
 ├── static/images/          Bundled images, usable by any quiz without uploading them
 └── boards/                 Example board file
@@ -229,3 +230,20 @@ To add a type, e.g. an audio question:
 4. Describe it in the board template (`static/downloads/Board_Vorlage.txt`) and in the board format table above.
 
 The board file format, the editor form with its type dropdown and fields, uploads and the round trip between editor and file need no changes. `TypeTemplatesTest` fails if a type has no fragment, so a forgotten step 3 shows up in the build.
+
+## Adding a participant input type
+
+How participants answer is set per question with `input:` and declared in `EInputTypes`: its key (the word in board files), its label (shown in the editor and on the big screen) and `maxLength`, the longest value it accepts. A buzzer has no value (`maxLength` 0); a type with a value only accepts non-empty submissions, and the scoring screen then shows each participant's value.
+
+The participant page contains one section per input type and shows the one of the current question. Each section comes from `templates/inputs/<key>.html` and registers itself with `registerInput(key, setup)`:
+
+- `setup(section, submit)` runs once. `section` is the element holding the fragment; `submit(value)` sends a submission (without a value for a buzzer) and updates the page with the answer.
+- It returns `render(state)`, called on every update. `state` holds `input`, `inputOpen`, `submitted`, `position`, `value` and `score`. `render` updates the section and returns the status text, or `null` for "Warte auf die nächste Frage".
+
+To add an input type, e.g. a number estimate:
+
+1. Add it to `EInputTypes`, e.g. `NUMBER("number", "Schätzung", maxLength = 15)`. If its values need more checks than trimming and the length limit, extend `cleanValue`.
+2. Create `templates/inputs/number.html` with a fragment named `content`, following `inputs/text.html`.
+3. Describe it in the board template and in the board format table above.
+
+The board format, the editor's input dropdown, the submission handling, the live panel and the scoring screen need no changes. `TypeTemplatesTest` fails if an input type has no fragment or the fragment doesn't register itself.

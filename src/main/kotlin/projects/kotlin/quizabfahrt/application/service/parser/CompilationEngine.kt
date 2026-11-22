@@ -16,7 +16,7 @@ class CompilationEngine {
         const val QUESTIONS_PER_CATEGORY = 6
         private val SECTION_HEADER = Regex("(category|question)(_\\d+)?:|answer:")
         private val CONTENT_KEYS = ContentField.entries.map { it.key }
-        private val QUESTION_KEYS = setOf("type", "points") + CONTENT_KEYS
+        private val QUESTION_KEYS = setOf("type", "points", "input") + CONTENT_KEYS
         private val ANSWER_KEYS = setOf("type") + CONTENT_KEYS
     }
 
@@ -114,7 +114,14 @@ class CompilationEngine {
             points,
             compileContent<EQuestionTypes>(questionFields, questionLine, "Frage"),
             compileContent<EAnswerTypes>(answerFields, answerLine, "Antwort"),
+            compileInput(questionFields["input"]),
         )
+    }
+
+    private fun compileInput(field: Field?): EInputTypes {
+        if (field?.value == null) return EInputTypes.DEFAULT
+        return typeOf<EInputTypes>(field.value)
+            ?: errorAt(field.line, "Unbekannte Eingabe '${field.value}' (erlaubt: ${EInputTypes.entries.joinToString { it.key }})")
     }
 
     private fun readFields(allowedKeys: Set<String>): Map<String, Field> {
@@ -132,7 +139,7 @@ class CompilationEngine {
     private inline fun <reified T> compileContent(fields: Map<String, Field>, headerLine: Int, kind: String): Content<T>
             where T : Enum<T>, T : ContentType {
         val typeField = fields["type"] ?: errorAt(headerLine, "$kind: 'type:' fehlt")
-        val type = contentTypeOf<T>(typeField.value)
+        val type = typeOf<T>(typeField.value)
             ?: errorAt(typeField.line, "Unbekannter ${kind}typ '${typeField.value}' (erlaubt: ${enumValues<T>().joinToString { it.key }})")
         return try {
             Content.of(type, ContentField.entries.associateWith { fields[it.key]?.value })

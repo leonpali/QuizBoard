@@ -21,7 +21,7 @@ class QuestionController(private val questionService: QuestionService, private v
     @GetMapping("/board/{board}/category/{category}/question/{question}/answer")
     fun answer(model: Model, @HostSession session: QuizSession, ref: QuestionRef): String {
         model.addAttribute("question", questionService.getQuestion(session, ref))
-        sessions.closeBuzzing(session)
+        sessions.closeInput(session)
         model.addAttribute("nextUrl", if (session.hasPlayers()) ref.toPath("/score") else ref.getBoardPath())
         return "answer"
     }

@@ -28,7 +28,8 @@
                     <div class="item-text">
                         <span class="item-title">
                             <span th:text="${question.points}">100</span> Punkte ·
-                            <span th:text="${question.getTypeLabel()}">Text</span>
+                            <span th:text="${question.getTypeLabel()}">Text</span> ·
+                            <span th:text="${question.getInputLabel()}">Buzzer</span>
                         </span>
                         <span class="item-meta"
                               th:text="${question.getSummary()}">Fragetext</span>

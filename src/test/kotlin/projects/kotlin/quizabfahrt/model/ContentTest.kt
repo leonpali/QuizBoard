@@ -32,8 +32,8 @@ class ContentTest {
 
     @Test
     fun `types are found by their key`() {
-        assertEquals(EQuestionTypes.LINEUP, contentTypeOf<EQuestionTypes>("lineup"))
-        assertEquals(EAnswerTypes.TEXTIMAGE, contentTypeOf<EAnswerTypes>("textimage"))
-        assertNull(contentTypeOf<EQuestionTypes>("textimage"))
+        assertEquals(EQuestionTypes.LINEUP, typeOf<EQuestionTypes>("lineup"))
+        assertEquals(EAnswerTypes.TEXTIMAGE, typeOf<EAnswerTypes>("textimage"))
+        assertNull(typeOf<EQuestionTypes>("textimage"))
     }
 }
