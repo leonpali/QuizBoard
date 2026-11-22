@@ -3,7 +3,11 @@ package projects.kotlin.quizabfahrt.application.service.parser
 import org.junit.jupiter.api.Test
 import projects.kotlin.quizabfahrt.model.EAnswerTypes
 import projects.kotlin.quizabfahrt.model.EQuestionTypes
+import kotlin.test.assertContains
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
 
 class CompilationEngineTest {
 
@@ -19,7 +23,7 @@ class CompilationEngineTest {
         assertEquals(6, questions.size)
         assertEquals(
             listOf(EQuestionTypes.TEXT, EQuestionTypes.IMAGE, EQuestionTypes.TEXT, EQuestionTypes.IMAGE, EQuestionTypes.LINEUP, EQuestionTypes.TEXT),
-            questions.map { it.type },
+            questions.map { it.content.type },
         )
         assertEquals(
             listOf(EAnswerTypes.TEXT, EAnswerTypes.TEXT, EAnswerTypes.IMAGE, EAnswerTypes.TEXTIMAGE, EAnswerTypes.TEXT, EAnswerTypes.TEXT),
@@ -48,5 +52,71 @@ class CompilationEngineTest {
         val board = compiler.compile(listOf(BoardFile("Board_1.txt", content))).single()
 
         assertEquals(listOf(100, 200, 300, 400, 500, 600), board.categories.single().questions.map { it.points })
+    }
+
+    private fun board(vararg questions: String) =
+        "category_1:\n    name: K\n    questions:\n" + questions.mapIndexed { i, q -> "question_${i + 1}:\n$q" }.joinToString("\n")
+
+    private fun parseLenient(content: String) =
+        compiler.compile(listOf(BoardFile("Board_1.txt", content)), requireFullCategories = false).single()
+
+    private fun parseError(content: String) =
+        assertFailsWith<QuizParseException> { parseLenient(content) }.message!!
+
+    @Test
+    fun `fields can come in any order and unneeded ones can be left out`() {
+        val question = parseLenient(board("""
+            points: 300
+            img: koeln.jpg
+            type: img
+            answer:
+                text: Kölner Dom
+                type: text
+        """.trimIndent())).categories.single().questions.single()
+
+        assertEquals(300, question.points)
+        assertEquals("koeln.jpg", question.getValue("img"))
+        assertNull(question.getValue("text"))
+        assertEquals("Kölner Dom", question.getAnswerValue("text"))
+    }
+
+    @Test
+    fun `unknown and repeated fields are rejected with their line`() {
+        assertContains(
+            parseError(board("type: text\ntext: Frage\nunbekannt: x\npoints: 100\nanswer:\ntype: text\ntext: A")),
+            "Board_1.txt, Zeile 7: Unbekanntes Feld 'unbekannt: x' (erlaubt: type, points, text, img",
+        )
+        assertContains(parseError(board("type: text\ntext: Frage\ntext: Nochmal\npoints: 100\nanswer:\ntype: text\ntext: A")), "'text:' kommt doppelt vor")
+    }
+
+    @Test
+    fun `missing type, points and required fields are reported at the question`() {
+        assertEquals("Board_1.txt, Zeile 4: Frage: 'type:' fehlt", parseError(board("text: Frage\npoints: 100\nanswer:\ntype: text\ntext: A")))
+        assertEquals("Board_1.txt, Zeile 4: 'points:' fehlt", parseError(board("type: text\ntext: Frage\nanswer:\ntype: text\ntext: A")))
+        assertEquals(
+            "Board_1.txt, Zeile 4: Frage: Für den Typ „Bild“ fehlt: Bild",
+            parseError(board("type: img\ntext: Frage\npoints: 100\nanswer:\ntype: text\ntext: A")),
+        )
+        assertEquals(
+            "Board_1.txt, Zeile 8: Antwort: Für den Typ „Bild und Text“ fehlt: Bild",
+            parseError(board("type: text\ntext: Frage\npoints: 100\nanswer:\ntype: textimage\ntext: A")),
+        )
+        assertContains(parseError(board("type: unbekannt\npoints: 100\nanswer:\ntype: text\ntext: A")), "Unbekannter Fragetyp 'unbekannt' (erlaubt: text, img, lineup")
+    }
+
+    @Test
+    fun `a question without answer section is rejected`() {
+        assertContains(parseError(board("type: text\ntext: Frage\npoints: 100") + "\nquestion_2:"), "'answer:' erwartet, gefunden: 'question_2:'")
+    }
+
+    @Test
+    fun `written boards contain only the filled in fields and read back identically`() {
+        val template = javaClass.getResource("/static/downloads/Board_Vorlage.txt")!!.readText()
+        val original = compiler.compile(listOf(BoardFile("a", template))).single()
+
+        val written = BoardWriter.write(original.categories)
+
+        assertEquals(original, compiler.compile(listOf(BoardFile("b", written))).single())
+        assertFalse("null" in written)
     }
 }

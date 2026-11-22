@@ -3,7 +3,7 @@
 <body>
     <div th:fragment="content">
         <div id="strings">
-            <p th:each="entry : ${question.getLineup()}" class="hidden" th:text="${entry}">Eintrag</p>
+            <p th:each="entry : ${#strings.listSplit(question.getValue('text'), ',')}" class="hidden" th:text="${#strings.trim(entry)}">Eintrag</p>
         </div>
         <button class="continue-button" id="reveal-button">Aufdecken</button>
 

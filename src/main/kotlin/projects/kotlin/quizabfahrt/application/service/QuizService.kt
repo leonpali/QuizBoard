@@ -11,6 +11,7 @@ import projects.kotlin.quizabfahrt.application.session.QuizSession
 import projects.kotlin.quizabfahrt.application.session.QuizSessionException
 import projects.kotlin.quizabfahrt.application.session.QuizSessionService
 import projects.kotlin.quizabfahrt.model.Board
+import projects.kotlin.quizabfahrt.model.ContentField
 import java.nio.file.Paths
 import java.text.Normalizer
 
@@ -51,10 +52,10 @@ class QuizService(
         val imageNames = images.map { nfc(it.originalFilename ?: "") }
         val invalidNames = imageNames.filter { !isPlainFileName(it) }
         if (invalidNames.isNotEmpty()) throw QuizSessionException("Ungültige Bilddateinamen: ${invalidNames.joinToString()}")
-        val unsupported = imageNames.filter { !isAllowedImage(it) }
+        val unsupported = imageNames.filter { !isAllowedFile(it) }
         if (unsupported.isNotEmpty()) {
             throw QuizSessionException(
-                "Nicht unterstützte Bildformate: ${unsupported.joinToString()} (erlaubt: ${IMAGE_EXTENSIONS.joinToString()})"
+                "Nicht unterstützte Dateiformate: ${unsupported.joinToString()} (erlaubt: ${ContentField.FILE_EXTENSIONS.joinToString()})"
             )
         }
 
@@ -84,16 +85,13 @@ class QuizService(
         return boards
             .flatMap { it.categories }
             .flatMap { it.questions }
-            .flatMap { listOf(it.img, it.answer.img) }
-            .filterNotNull()
+            .flatMap { it.getFiles() }
             .map { nfc(it) }
             .distinct()
     }
 
     companion object {
-        val IMAGE_EXTENSIONS = listOf("jpg", "jpeg", "png", "gif", "webp", "avif", "bmp")
-
-        fun isAllowedImage(name: String): Boolean = name.substringAfterLast('.', "").lowercase() in IMAGE_EXTENSIONS
+        fun isAllowedFile(name: String): Boolean = name.substringAfterLast('.', "").lowercase() in ContentField.FILE_EXTENSIONS
 
         fun isPlainFileName(name: String): Boolean =
             name.isNotBlank() && name != "." && name != ".." && Paths.get(name).fileName.toString() == name

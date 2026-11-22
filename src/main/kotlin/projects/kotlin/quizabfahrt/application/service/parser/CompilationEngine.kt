@@ -14,6 +14,10 @@ class CompilationEngine {
 
     companion object {
         const val QUESTIONS_PER_CATEGORY = 6
+        private val SECTION_HEADER = Regex("(category|question)(_\\d+)?:|answer:")
+        private val CONTENT_KEYS = ContentField.entries.map { it.key }
+        private val QUESTION_KEYS = setOf("type", "points") + CONTENT_KEYS
+        private val ANSWER_KEYS = setOf("type") + CONTENT_KEYS
     }
 
     private var sc: Scanner? = null
@@ -94,46 +98,51 @@ class CompilationEngine {
 
     private fun compileQuestion(): Question {
         if (!currentToken.startsWith("question")) error("'question_N:' erwartet, gefunden: '$currentToken'")
+        val questionLine = currentLine
         advanceToken()
+        val questionFields = readFields(QUESTION_KEYS)
 
-        val typeString = value("type")
-        val type = EQuestionTypes.entries.firstOrNull { it.key == typeString }
-            ?: error("Unbekannter Fragetyp '$typeString' (erlaubt: ${EQuestionTypes.entries.joinToString { it.key }})")
+        if (currentToken != "answer:") error("'answer:' erwartet, gefunden: '$currentToken'")
+        val answerLine = currentLine
         advanceToken()
+        val answerFields = readFields(ANSWER_KEYS)
 
-        val text = value("text")
-        if (type != EQuestionTypes.IMAGE && text == null) error("Frage vom Typ '${type.name.lowercase()}' braucht einen Text")
-        advanceToken()
+        val pointsField = questionFields["points"] ?: errorAt(questionLine, "'points:' fehlt")
+        val points = pointsField.value?.toIntOrNull() ?: errorAt(pointsField.line, "'points:' muss eine Zahl sein")
 
-        val img = value("img")
-        if (type == EQuestionTypes.IMAGE && img == null) error("Bildfrage braucht ein Bild")
-        advanceToken()
-
-        val points = value("points")?.toIntOrNull() ?: error("'points:' muss eine Zahl sein")
-        advanceToken()
-
-        val answer = compileAnswer()
-
-        return Question(type, text, img, points, answer)
+        return Question(
+            points,
+            compileContent<EQuestionTypes>(questionFields, questionLine, "Frage"),
+            compileContent<EAnswerTypes>(answerFields, answerLine, "Antwort"),
+        )
     }
 
-    private fun compileAnswer(): Answer {
-        if (!currentToken.startsWith("answer")) error("'answer:' erwartet, gefunden: '$currentToken'")
-        advanceToken()
-
-        val typeString = value("type")
-        val type = EAnswerTypes.entries.firstOrNull { it.key == typeString }
-            ?: error("Unbekannter Antworttyp '$typeString' (erlaubt: ${EAnswerTypes.entries.joinToString { it.key }})")
-        advanceToken()
-
-        val text = value("text")
-        if (type != EAnswerTypes.IMAGE && text == null) error("Antwort vom Typ '${type.name.lowercase()}' braucht einen Text")
-        advanceToken()
-
-        val img = value("img")
-        if (type != EAnswerTypes.TEXT && img == null) error("Antwort vom Typ '${type.name.lowercase()}' braucht ein Bild")
-        advanceToken()
-
-        return Answer(type, text, img)
+    private fun readFields(allowedKeys: Set<String>): Map<String, Field> {
+        val fields = LinkedHashMap<String, Field>()
+        while (currentToken != "__EOF__" && !SECTION_HEADER.matches(currentToken)) {
+            val key = currentToken.substringBefore(":", missingDelimiterValue = "")
+            if (key !in allowedKeys) error("Unbekanntes Feld '$currentToken' (erlaubt: ${allowedKeys.joinToString()})")
+            if (key in fields) error("'$key:' kommt doppelt vor")
+            fields[key] = Field(value(key), currentLine)
+            advanceToken()
+        }
+        return fields
     }
+
+    private inline fun <reified T> compileContent(fields: Map<String, Field>, headerLine: Int, kind: String): Content<T>
+            where T : Enum<T>, T : ContentType {
+        val typeField = fields["type"] ?: errorAt(headerLine, "$kind: 'type:' fehlt")
+        val type = contentTypeOf<T>(typeField.value)
+            ?: errorAt(typeField.line, "Unbekannter ${kind}typ '${typeField.value}' (erlaubt: ${enumValues<T>().joinToString { it.key }})")
+        return try {
+            Content.of(type, ContentField.entries.associateWith { fields[it.key]?.value })
+        } catch (e: ContentException) {
+            errorAt(headerLine, "$kind: ${e.message}")
+        }
+    }
+
+    private fun errorAt(line: Int, message: String): Nothing =
+        throw QuizParseException("$currentFileName, Zeile $line: $message")
+
+    private data class Field(val value: String?, val line: Int)
 }

@@ -124,7 +124,7 @@ class QuizFlowTest {
             createQuizError(boardFile("Board_1.txt", "Kat"), MockMultipartFile("images", "../x.png", "image/png", byteArrayOf(1))),
             "Ungültige Bilddateinamen",
         )
-        assertContains(createQuizError(boardFile("Board_1.txt", "Kat"), image("bild.svg")), "Nicht unterstützte Bildformate: bild.svg")
+        assertContains(createQuizError(boardFile("Board_1.txt", "Kat"), image("bild.svg")), "Nicht unterstützte Dateiformate: bild.svg")
         assertContains(createQuizError(boardFile("Board_1.txt", "Kat", image = "fehlt.png")), "nicht hochgeladen: fehlt.png")
         assertContains(
             createQuizError(MockMultipartFile("boards", "Kaputt.txt", "text/plain", "category_1:\n    name: K\n    nope: x".toByteArray())),

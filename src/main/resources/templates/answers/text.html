@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="de" xmlns:th="http://www.thymeleaf.org">
 <body>
-    <p th:fragment="content" class="answer" th:text="${question.getAnswerText()}">Antworttext</p>
+    <p th:fragment="content" class="answer" th:text="${question.getAnswerValue('text')}">Antworttext</p>
 </body>
 </html>

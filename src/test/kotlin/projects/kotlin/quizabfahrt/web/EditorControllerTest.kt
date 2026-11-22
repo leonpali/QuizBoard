@@ -11,6 +11,8 @@ import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.multipart
 import org.springframework.test.web.servlet.post
 import org.springframework.test.web.servlet.request.RequestPostProcessor
+import projects.kotlin.quizabfahrt.model.EAnswerTypes
+import projects.kotlin.quizabfahrt.model.EQuestionTypes
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
@@ -67,10 +69,10 @@ class EditorControllerTest {
         }
 
         mockMvc.post("/editor/categories/0/questions/0/question") {
-            cookie(draft); param("type", "IMAGE"); param("text", ""); param("img", "koeln.jpg"); param("points", "250")
+            cookie(draft); param("type", "img"); param("text", ""); param("img", "koeln.jpg"); param("points", "250")
         }.andExpect { redirectedUrl("/editor/categories/0") }
         mockMvc.post("/editor/categories/0/questions/0/answer") {
-            cookie(draft); param("type", "TEXTIMAGE"); param("text", "Kölner Dom"); param("img", "dom.jpg")
+            cookie(draft); param("type", "textimage"); param("text", "Kölner Dom"); param("img", "dom.jpg")
         }.andExpect { redirectedUrl("/editor/categories/0") }
 
         val response = mockMvc.post("/editor/download") { cookie(draft); param("fileName", "Erdkunde") }
@@ -94,13 +96,33 @@ class EditorControllerTest {
         mockMvc.post("/editor/categories/0/questions") { cookie(draft) }
 
         val html = mockMvc.post("/editor/categories/0/questions/0/question") {
-            cookie(draft); param("type", "IMAGE"); param("text", "Mein Text"); param("img", ""); param("points", "250")
+            cookie(draft); param("type", "img"); param("text", "Mein Text"); param("img", ""); param("points", "250")
         }.andExpect { status { isOk() } }.andReturn().response.contentAsString
 
-        assertContains(html, "Eine Bildfrage braucht einen Bildnamen.")
-        assertContains(html, "value=\"IMAGE\" selected")
+        assertContains(html, "Für den Typ „Bild“ fehlt: Bild")
+        assertContains(html, "value=\"img\" selected")
         assertContains(html, "Mein Text")
-        assertContains(page("/editor/categories/0/questions/0/question", draft), "value=\"TEXT\" selected")
+        assertContains(page("/editor/categories/0/questions/0/question", draft), "value=\"text\" selected")
+    }
+
+    @Test
+    fun `the forms offer every type and the fields they need`() {
+        val draft = newDraft()
+        addCategory(draft, "K")
+        mockMvc.post("/editor/categories/0/questions") { cookie(draft) }
+
+        val questionForm = page("/editor/categories/0/questions/0/question", draft)
+        val questionTypes = Regex("<option value=\"([^\"]+)\"").findAll(questionForm).map { it.groupValues[1] }.toList()
+        assertEquals(EQuestionTypes.entries.map { it.key }, questionTypes)
+        assertContains(questionForm, "Für: Text, Lineup")
+        assertContains(questionForm, "name=\"points\"")
+        assertContains(questionForm, "Lineup: Einträge im Text mit Komma trennen")
+
+        val answerForm = page("/editor/categories/0/questions/0/answer", draft)
+        val answerTypes = Regex("<option value=\"([^\"]+)\"").findAll(answerForm).map { it.groupValues[1] }.toList()
+        assertEquals(EAnswerTypes.entries.map { it.key }, answerTypes)
+        assertContains(answerForm, "Für: Bild, Bild und Text")
+        assertFalse("name=\"points\"" in answerForm)
     }
 
     @Test

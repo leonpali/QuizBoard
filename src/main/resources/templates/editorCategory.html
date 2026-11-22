@@ -28,12 +28,12 @@
                     <div class="item-text">
                         <span class="item-title">
                             <span th:text="${question.points}">100</span> Punkte ·
-                            <span th:text="${question.getTypeKey()}">text</span>
+                            <span th:text="${question.getTypeLabel()}">Text</span>
                         </span>
                         <span class="item-meta"
-                              th:text="${question.isImage()} ? ${'Bild: ' + question.img} : ${question.text}">Fragetext</span>
+                              th:text="${question.getSummary()}">Fragetext</span>
                         <span class="item-meta"
-                              th:text="'Antwort: ' + (${question.isAnswerImage()} ? ${'Bild: ' + question.answerImg} : ${question.answerText})">Antwort</span>
+                              th:text="'Antwort: ' + ${question.getAnswerSummary()}">Antwort</span>
                     </div>
                     <div class="item-actions">
                         <form class="move-buttons" th:action="@{'/editor/categories/' + ${c} + '/questions/' + ${it.index} + '/move'}" method="post">

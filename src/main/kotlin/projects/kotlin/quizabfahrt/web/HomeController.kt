@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.multipart.MultipartFile
 import projects.kotlin.quizabfahrt.application.service.QuizService
 import projects.kotlin.quizabfahrt.application.session.QuizSession
+import projects.kotlin.quizabfahrt.model.ContentField
 import projects.kotlin.quizabfahrt.application.session.QuizSessionException
 import projects.kotlin.quizabfahrt.application.session.QuizSessionService
 
@@ -26,7 +27,8 @@ class HomeController(private val quizService: QuizService, private val sessions:
         model.addAttribute("hostedCode", hosted?.code)
         model.addAttribute("joinedCode", sessions.findPlayer(playerToken)?.first?.code)
         model.addAttribute("bundledImages", quizService.bundledImages)
-        model.addAttribute("imageAccept", QuizService.IMAGE_EXTENSIONS.joinToString(",") { ".$it" })
+        model.addAttribute("fileExtensions", ContentField.FILE_EXTENSIONS.joinToString())
+        model.addAttribute("fileAccept", ContentField.FILE_EXTENSIONS.joinToString(",") { ".$it" })
         return "index"
     }
 

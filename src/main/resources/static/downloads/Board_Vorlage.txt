@@ -5,7 +5,9 @@
 #
 # Regeln:
 # - Jede Kategorie hat genau 6 Fragen. Die Anzahl der Kategorien ist frei.
-# - Die Felder müssen genau in dieser Reihenfolge stehen.
+# - Kategorien beginnen mit category_N:, Fragen mit question_N:, Antworten mit answer:.
+# - Innerhalb einer Frage oder Antwort ist die Reihenfolge der Felder egal.
+#   Felder, die der Typ nicht braucht, können weggelassen werden.
 # - Einrückung und Leerzeilen sind egal, Zeilen mit # am Anfang werden ignoriert.
 # - Leere Felder: einfach leer lassen oder "null" schreiben.
 # - Bilder: nur den Dateinamen angeben und die Datei beim Erstellen des Quiz mit hochladen.

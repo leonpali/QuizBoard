@@ -1,22 +1,42 @@
 package projects.kotlin.quizabfahrt.application.editor
 
-import projects.kotlin.quizabfahrt.model.EAnswerTypes
-import projects.kotlin.quizabfahrt.model.EQuestionTypes
+import projects.kotlin.quizabfahrt.model.Content
+import projects.kotlin.quizabfahrt.model.ContentField
+import projects.kotlin.quizabfahrt.model.ContentType
 
-data class QuestionInput(val type: EQuestionTypes, val text: String?, val img: String?, val points: String) {
+data class ContentInput(val typeKey: String, private val values: Map<String, String?>, val points: String? = null) {
 
-    fun isType(name: String) = type.name == name
+    fun isType(key: String) = typeKey == key
+
+    fun getValue(key: String): String? = values[key]
+
+    fun getValues(): Map<ContentField, String?> = ContentField.entries.associateWith { values[it.key] }
 
     companion object {
-        fun of(question: QuestionDraft) = QuestionInput(question.type, question.text, question.img, question.points.toString())
+        fun of(content: Content<*>, points: Int? = null) =
+            ContentInput(content.type.key, content.values.mapKeys { it.key.key }, points?.toString())
+
+        fun fromForm(params: Map<String, String>) =
+            ContentInput(params["type"].orEmpty(), ContentField.entries.associate { it.key to params[it.key] }, params["points"])
     }
 }
 
-data class AnswerInput(val type: EAnswerTypes, val text: String?, val img: String?) {
+data class FormField(private val field: ContentField, val usedBy: String) {
 
-    fun isType(name: String) = type.name == name
+    fun getKey() = field.key
+
+    fun getLabel() = field.label
+
+    fun isFile() = field.isFile
+
+    fun isMultiline() = field.isMultiline
+
+    fun getExtensions() = field.extensions.joinToString()
 
     companion object {
-        fun of(question: QuestionDraft) = AnswerInput(question.answerType, question.answerText, question.answerImg)
+        fun of(types: List<ContentType>): List<FormField> = ContentField.entries.mapNotNull { field ->
+            val users = types.filter { field in it.fields }
+            if (users.isEmpty()) null else FormField(field, users.joinToString { it.label })
+        }
     }
 }

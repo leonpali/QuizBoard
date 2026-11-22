@@ -47,7 +47,7 @@ Without any participants, the app still works as a plain projected quiz board: t
 
 ## Board file format
 
-Each file is one board. Every category needs exactly 6 questions; there can be any number of categories. Keys must appear in exactly this order (indentation is optional, blank lines and lines starting with `#` are ignored). A commented template with an example of every question type can be downloaded from the start page ([`Board_Vorlage.txt`](src/main/resources/static/downloads/Board_Vorlage.txt)).
+Each file is one board. Every category needs exactly 6 questions; there can be any number of categories. Within a question or answer, fields can come in any order, and fields its type doesn't need can be left out (indentation is optional, blank lines and lines starting with `#` are ignored). A commented template with an example of every question type can be downloaded from the start page ([`Board_Vorlage.txt`](src/main/resources/static/downloads/Board_Vorlage.txt)).
 
 ```
 category_1:
@@ -80,7 +80,7 @@ category_2:
 |---|---|
 | Question `type` | `text` (shows `text`), `img` (shows `img`), `lineup` (`text` is a comma-separated list, revealed item by item with "Aufdecken") |
 | Answer `type` | `text`, `img`, `textimage` (image and text) |
-| `img` | File name of an uploaded image, or `null` / empty |
+| `img` | File name of an uploaded image; leave it out, empty or `null` if the type doesn't need it |
 | `points` | Any whole number. A wrong answer deducts half (rounded down). |
 
 Errors in a file are reported on upload with the file name and line number.
@@ -215,11 +215,17 @@ The Content-Security-Policy blocks every script that doesn't carry the request's
 
 ## Adding a question or answer type
 
-The question and answer pages are frames (`question.html`, `answer.html`) that include one fragment per type, picked by the type's key. To add a type, e.g. an audio question:
+A question is `Question(points, content, answer)`, where `content` and `answer` are `Content` objects: a type plus the values of its fields. Types and fields are declared once, and parser, writer, editor and validation work from these declarations:
 
-1. Add it to `EQuestionTypes` (or `EAnswerTypes`) with its key, e.g. `AUDIO("audio")`. The key is the word used in board files.
-2. Create `templates/questions/audio.html` (or `templates/answers/…`) with a fragment named `content`. Look at `questions/lineup.html` for a type with its own script.
-3. Add the type's required fields to the parser (`CompilationEngine`) and to the editor's validation (`BoardEditorService.updateQuestion` / `updateAnswer`), and add it to the type dropdown in `editorQuestion.html` (or `editorAnswer.html`).
+- `ContentField` lists the kinds of fields (`text`, `img`). File fields declare their allowed extensions, which also drive the upload check and the editor hints.
+- `EQuestionTypes` and `EAnswerTypes` declare each type's key (the word in board files), its label (shown in the editor) and the fields it needs.
+- `Content.of(type, values)` is the only way to create content and rejects values that miss a field the type needs.
+
+To add a type, e.g. an audio question:
+
+1. If it needs a new kind of field, add it to `ContentField`, e.g. `AUDIO("audio", "Audio", listOf("mp3", "ogg"))`.
+2. Add the type to `EQuestionTypes` (or `EAnswerTypes`), e.g. `AUDIO("audio", "Audio", setOf(ContentField.AUDIO))`.
+3. Create `templates/questions/audio.html` (or `templates/answers/…`) with a fragment named `content` that displays it, using `question.getValue('audio')` (or `getAnswerValue`). `questions/lineup.html` shows a type with its own script.
 4. Describe it in the board template (`static/downloads/Board_Vorlage.txt`) and in the board format table above.
 
-`TypeTemplatesTest` fails if a type has no fragment, so a forgotten step 2 shows up in the build.
+The board file format, the editor form with its type dropdown and fields, uploads and the round trip between editor and file need no changes. `TypeTemplatesTest` fails if a type has no fragment, so a forgotten step 3 shows up in the build.

@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="de" xmlns:th="http://www.thymeleaf.org">
 <body>
-    <img th:fragment="content" class="answer-image" th:src="@{'/images/' + ${question.getAnswerImg()}}" alt="">
+    <img th:fragment="content" class="answer-image" th:src="@{'/images/' + ${question.getAnswerValue('img')}}" alt="">
 </body>
 </html>

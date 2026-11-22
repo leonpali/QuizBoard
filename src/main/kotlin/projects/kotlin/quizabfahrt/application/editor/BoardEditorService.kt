@@ -6,8 +6,14 @@ import projects.kotlin.quizabfahrt.application.service.QuizService
 import projects.kotlin.quizabfahrt.application.service.parser.BoardFile
 import projects.kotlin.quizabfahrt.application.service.parser.CompilationEngine
 import projects.kotlin.quizabfahrt.application.service.parser.QuizParseException
+import projects.kotlin.quizabfahrt.model.Content
+import projects.kotlin.quizabfahrt.model.ContentException
+import projects.kotlin.quizabfahrt.model.ContentField
+import projects.kotlin.quizabfahrt.model.ContentType
 import projects.kotlin.quizabfahrt.model.EAnswerTypes
 import projects.kotlin.quizabfahrt.model.EQuestionTypes
+import projects.kotlin.quizabfahrt.model.Question
+import projects.kotlin.quizabfahrt.model.contentTypeOf
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID
@@ -97,42 +103,23 @@ class BoardEditorService(private val compiler: CompilationEngine) {
     fun addQuestion(draft: BoardDraft, categoryIndex: Int) = change(draft) {
         val questions = draft.getCategory(categoryIndex).questions
         if (questions.size >= MAX_QUESTIONS) throw BoardEditorException("Maximal $MAX_QUESTIONS Fragen pro Kategorie.")
-        questions.add(QuestionDraft(points = (questions.size + 1) * 100))
+        questions.add(newQuestion(points = (questions.size + 1) * 100))
     }
 
     fun removeQuestion(draft: BoardDraft, categoryIndex: Int, questionIndex: Int) = change(draft) {
-        draft.getCategory(categoryIndex).questions.remove(draft.getQuestion(categoryIndex, questionIndex))
+        draft.removeQuestion(categoryIndex, questionIndex)
     }
 
-    fun updateQuestion(draft: BoardDraft, categoryIndex: Int, questionIndex: Int, input: QuestionInput) = change(draft) {
-        val question = draft.getQuestion(categoryIndex, questionIndex)
-        val type = input.type
-        val cleanText = clean(input.text, "Der Text", MAX_TEXT_LENGTH)
-        val cleanImg = cleanImageName(input.img)
-        val cleanPoints = input.points.trim().toIntOrNull()?.takeIf { it in 0..MAX_POINTS }
+    fun updateQuestion(draft: BoardDraft, categoryIndex: Int, questionIndex: Int, input: ContentInput) = change(draft) {
+        val points = input.points?.trim()?.toIntOrNull()?.takeIf { it in 0..MAX_POINTS }
             ?: throw BoardEditorException("Die Punkte müssen eine ganze Zahl zwischen 0 und $MAX_POINTS sein.")
-
-        if (type != EQuestionTypes.IMAGE && cleanText == null) throw BoardEditorException("Diese Frage braucht einen Text.")
-        if (type == EQuestionTypes.IMAGE && cleanImg == null) throw BoardEditorException("Eine Bildfrage braucht einen Bildnamen.")
-
-        question.type = type
-        question.text = cleanText
-        question.img = cleanImg
-        question.points = cleanPoints
+        val question = draft.getQuestion(categoryIndex, questionIndex)
+        draft.setQuestion(categoryIndex, questionIndex, question.copy(points = points, content = buildContent<EQuestionTypes>(input)))
     }
 
-    fun updateAnswer(draft: BoardDraft, categoryIndex: Int, questionIndex: Int, input: AnswerInput) = change(draft) {
+    fun updateAnswer(draft: BoardDraft, categoryIndex: Int, questionIndex: Int, input: ContentInput) = change(draft) {
         val question = draft.getQuestion(categoryIndex, questionIndex)
-        val type = input.type
-        val cleanText = clean(input.text, "Der Text", MAX_TEXT_LENGTH)
-        val cleanImg = cleanImageName(input.img)
-
-        if (type != EAnswerTypes.IMAGE && cleanText == null) throw BoardEditorException("Diese Antwort braucht einen Text.")
-        if (type != EAnswerTypes.TEXT && cleanImg == null) throw BoardEditorException("Diese Antwort braucht einen Bildnamen.")
-
-        question.answerType = type
-        question.answerText = cleanText
-        question.answerImg = cleanImg
+        draft.setQuestion(categoryIndex, questionIndex, question.copy(answer = buildContent<EAnswerTypes>(input)))
     }
 
     // Downloading ends the draft: nothing is kept once the file has been handed out
@@ -172,9 +159,26 @@ class BoardEditorService(private val compiler: CompilationEngine) {
     private fun requireText(value: String, label: String, maxLength: Int): String =
         clean(value, label, maxLength) ?: throw BoardEditorException("$label darf nicht leer sein.")
 
-    private fun cleanImageName(value: String?): String? {
-        val name = clean(value, "Der Bildname", MAX_NAME_LENGTH)?.let { QuizService.nfc(it) } ?: return null
-        if (!QuizService.isPlainFileName(name)) throw BoardEditorException("Der Bildname darf keine Ordner enthalten.")
+    private fun newQuestion(points: Int) = Question(
+        points,
+        Content.of(EQuestionTypes.TEXT, mapOf(ContentField.TEXT to "Neue Frage")),
+        Content.of(EAnswerTypes.TEXT, mapOf(ContentField.TEXT to "Antwort")),
+    )
+
+    private inline fun <reified T> buildContent(input: ContentInput): Content<T> where T : Enum<T>, T : ContentType {
+        val type = contentTypeOf<T>(input.typeKey) ?: throw BoardEditorException("Unbekannter Typ '${input.typeKey}'.")
+        val values = input.getValues().mapValues { (field, value) -> cleanField(field, value) }
+        return try {
+            Content.of(type, values)
+        } catch (e: ContentException) {
+            throw BoardEditorException(e.message.orEmpty())
+        }
+    }
+
+    private fun cleanField(field: ContentField, value: String?): String? {
+        if (!field.isFile) return clean(value, field.label, MAX_TEXT_LENGTH)
+        val name = clean(value, field.label, MAX_NAME_LENGTH)?.let { QuizService.nfc(it) } ?: return null
+        if (!QuizService.isPlainFileName(name)) throw BoardEditorException("${field.label}: Der Dateiname darf keine Ordner enthalten.")
         return name
     }
 

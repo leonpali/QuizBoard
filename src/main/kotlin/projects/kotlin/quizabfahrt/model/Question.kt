@@ -1,19 +1,24 @@
 package projects.kotlin.quizabfahrt.model
 
-data class Question(
-    val type: EQuestionTypes,
-    val text: String?,
-    val img: String?,
-    val points: Int,
-    val answer: Answer
-) {
-    fun getTypeKey(): String = type.key
+typealias QuestionContent = Content<EQuestionTypes>
+
+typealias AnswerContent = Content<EAnswerTypes>
+
+data class Question(val points: Int, val content: QuestionContent, val answer: AnswerContent) {
+
+    fun getTypeKey(): String = content.type.key
+
+    fun getTypeLabel(): String = content.type.label
 
     fun getAnswerTypeKey(): String = answer.type.key
 
-    fun getLineup(): List<String> = text.orEmpty().split(",").map { it.trim() }
+    fun getValue(key: String): String? = content.getValue(key)
 
-    fun getAnswerText(): String? = answer.text
+    fun getAnswerValue(key: String): String? = answer.getValue(key)
 
-    fun getAnswerImg(): String? = answer.img
+    fun getSummary(): String = content.getSummary()
+
+    fun getAnswerSummary(): String = answer.getSummary()
+
+    fun getFiles(): List<String> = content.getFiles() + answer.getFiles()
 }
