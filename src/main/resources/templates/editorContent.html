@@ -37,18 +37,18 @@
                            th:value="${form.getValue(field.getKey())}">
                 </label>
 
-                <label class="field" th:if="${forQuestion}">
-                    <span class="field-title">Punkte</span>
-                    <span class="field-hint">Eine falsche Antwort zieht die Hälfte ab.</span>
-                    <input class="text-input points-input" type="number" name="points" th:value="${form.points}" min="0" th:max="${maxPoints}" step="1" required>
-                </label>
-
-                <label class="field" th:if="${forQuestion}">
-                    <span class="field-title">Eingabe der Teilnehmer</span>
-                    <select class="text-input" name="input">
-                        <option th:each="input : ${inputs}" th:value="${input.key}" th:selected="${form.isInput(input.key)}"
-                                th:text="${input.label}">Buzzer</option>
+                <label class="field" th:each="setting : ${settings}">
+                    <span class="field-title" th:text="${setting.label}">Punkte</span>
+                    <span class="field-hint" th:if="${setting.hint}" th:text="${setting.hint}">Hinweis</span>
+                    <select th:if="${setting.hasOptions()}" class="text-input" th:name="${setting.key}">
+                        <option th:each="option : ${setting.options}" th:value="${option.key}"
+                                th:selected="${settingsForm.isValue(setting.key, option.key)}" th:text="${option.label}">Buzzer</option>
                     </select>
+                    <input th:if="${setting.isNumber()}" class="text-input number-input" type="number" th:name="${setting.key}"
+                           th:value="${settingsForm.getValue(setting.key)}" th:min="${setting.getMin()}" th:max="${setting.getMax()}" step="1"
+                           th:required="${setting.isRequired()}">
+                    <input th:unless="${setting.hasOptions() or setting.isNumber()}" class="text-input" type="text" th:name="${setting.key}"
+                           th:value="${settingsForm.getValue(setting.key)}" th:required="${setting.isRequired()}">
                 </label>
 
                 <div class="form-actions">

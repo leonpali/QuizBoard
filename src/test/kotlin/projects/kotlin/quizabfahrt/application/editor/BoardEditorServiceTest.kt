@@ -21,8 +21,12 @@ class BoardEditorServiceTest {
 
     private val template = javaClass.getResource("/static/downloads/Board_Vorlage.txt")!!.readBytes()
 
-    private fun questionInput(type: EQuestionTypes, text: String?, img: String?, points: String, input: String? = "buzzer") =
-        ContentInput(type.key, mapOf("text" to text, "img" to img), points, input)
+    private fun updateQuestion(draft: BoardDraft, type: EQuestionTypes, text: String?, img: String?, points: String, input: String? = "buzzer") =
+        editor.updateQuestion(
+            draft, 0, 0,
+            ContentInput(type.key, mapOf("text" to text, "img" to img)),
+            SettingsInput(mapOf("points" to points, "input" to input)),
+        )
 
     private fun answerInput(type: EAnswerTypes, text: String?, img: String?) =
         ContentInput(type.key, mapOf("text" to text, "img" to img))
@@ -148,16 +152,16 @@ class BoardEditorServiceTest {
     fun `questions are validated like the parser does`() {
         val draft = boardWith("K" to 1)
 
-        assertFailsWith<BoardEditorException> { editor.updateQuestion(draft, 0, 0, questionInput(EQuestionTypes.IMAGE, "Text", "", "100")) }
-        assertFailsWith<BoardEditorException> { editor.updateQuestion(draft, 0, 0, questionInput(EQuestionTypes.TEXT, " ", null, "100")) }
-        assertFailsWith<BoardEditorException> { editor.updateQuestion(draft, 0, 0, questionInput(EQuestionTypes.TEXT, "Text", null, "viel")) }
-        assertFailsWith<BoardEditorException> { editor.updateQuestion(draft, 0, 0, questionInput(EQuestionTypes.TEXT, "Text", null, "-5")) }
-        assertFailsWith<BoardEditorException> { editor.updateQuestion(draft, 0, 0, questionInput(EQuestionTypes.TEXT, "Text", "a/b.jpg", "100")) }
-        assertFailsWith<BoardEditorException> { editor.updateQuestion(draft, 0, 0, questionInput(EQuestionTypes.TEXT, "x".repeat(1001), null, "100")) }
+        assertFailsWith<BoardEditorException> { updateQuestion(draft, EQuestionTypes.IMAGE, "Text", "", "100") }
+        assertFailsWith<BoardEditorException> { updateQuestion(draft, EQuestionTypes.TEXT, " ", null, "100") }
+        assertFailsWith<BoardEditorException> { updateQuestion(draft, EQuestionTypes.TEXT, "Text", null, "viel") }
+        assertFailsWith<BoardEditorException> { updateQuestion(draft, EQuestionTypes.TEXT, "Text", null, "-5") }
+        assertFailsWith<BoardEditorException> { updateQuestion(draft, EQuestionTypes.TEXT, "Text", "a/b.jpg", "100") }
+        assertFailsWith<BoardEditorException> { updateQuestion(draft, EQuestionTypes.TEXT, "x".repeat(1001), null, "100") }
         assertFailsWith<BoardEditorException> { editor.updateAnswer(draft, 0, 0, answerInput(EAnswerTypes.TEXTIMAGE, "Text", null)) }
         assertFailsWith<BoardEditorException> { editor.updateAnswer(draft, 0, 0, answerInput(EAnswerTypes.IMAGE, "Text", " ")) }
 
-        editor.updateQuestion(draft, 0, 0, questionInput(EQuestionTypes.LINEUP, "A,\nB,\r\nC", null, " 400 "))
+        updateQuestion(draft, EQuestionTypes.LINEUP, "A,\nB,\r\nC", null, " 400 ")
         val question = draft.getQuestion(0, 0)
         assertEquals("A, B, C", question.getValue("text"))
         assertEquals(400, question.points)
@@ -177,39 +181,39 @@ class BoardEditorServiceTest {
         val draft = boardWith("K" to 1)
         val before = draft.getQuestion(0, 0)
 
-        val e = assertFailsWith<BoardEditorException> { editor.updateQuestion(draft, 0, 0, questionInput(EQuestionTypes.IMAGE, "Text", null, "300")) }
+        val e = assertFailsWith<BoardEditorException> { updateQuestion(draft, EQuestionTypes.IMAGE, "Text", null, "300") }
 
         assertEquals("Für den Typ „Bild“ fehlt: Bild", e.message)
         assertEquals(before, draft.getQuestion(0, 0))
     }
 
     @Test
-    fun `the input type can be changed and must be given`() {
+    fun `the input type can be changed and falls back to the buzzer like in files`() {
         val draft = boardWith("K" to 1)
         assertEquals(EInputTypes.BUZZER, draft.getQuestion(0, 0).input)
 
-        editor.updateQuestion(draft, 0, 0, questionInput(EQuestionTypes.TEXT, "Frage", null, "100", input = "text"))
+        updateQuestion(draft, EQuestionTypes.TEXT, "Frage", null, "100", input = "text")
         assertEquals(EInputTypes.TEXT, draft.getQuestion(0, 0).input)
         assertContains(draft.toText(), "input: text")
 
-        assertFailsWith<BoardEditorException> { editor.updateQuestion(draft, 0, 0, questionInput(EQuestionTypes.TEXT, "Frage", null, "200", input = null)) }
-        assertEquals(100, draft.getQuestion(0, 0).points)
+        updateQuestion(draft, EQuestionTypes.TEXT, "Frage", null, "200", input = null)
+        assertEquals(EInputTypes.BUZZER, draft.getQuestion(0, 0).input)
     }
 
     @Test
     fun `unknown type keys are rejected`() {
         val draft = boardWith("K" to 1)
         assertFailsWith<BoardEditorException> {
-            editor.updateQuestion(draft, 0, 0, questionInput(EQuestionTypes.TEXT, "Frage", null, "100", input = "gesten"))
+            updateQuestion(draft, EQuestionTypes.TEXT, "Frage", null, "100", input = "gesten")
         }
-        assertFailsWith<BoardEditorException> { editor.updateQuestion(draft, 0, 0, ContentInput("video", emptyMap(), "100")) }
+        assertFailsWith<BoardEditorException> { editor.updateQuestion(draft, 0, 0, ContentInput("video", emptyMap()), SettingsInput(mapOf("points" to "100"))) }
         assertFailsWith<BoardEditorException> { editor.updateAnswer(draft, 0, 0, ContentInput("lineup", mapOf("text" to "x"))) }
     }
 
     @Test
     fun `a type's unused fields are kept but only the required ones are checked`() {
         val draft = boardWith("K" to 1)
-        editor.updateQuestion(draft, 0, 0, questionInput(EQuestionTypes.IMAGE, "Bildunterschrift", "koeln.jpg", "200"))
+        updateQuestion(draft, EQuestionTypes.IMAGE, "Bildunterschrift", "koeln.jpg", "200")
 
         val question = draft.getQuestion(0, 0)
         assertEquals("koeln.jpg", question.getValue("img"))
@@ -222,7 +226,7 @@ class BoardEditorServiceTest {
         val draft = boardWith("K" to 1)
         val injected = "Frage points: 99999 answer:\u0085x\ty"
 
-        editor.updateQuestion(draft, 0, 0, questionInput(EQuestionTypes.TEXT, injected, null, "100"))
+        updateQuestion(draft, EQuestionTypes.TEXT, injected, null, "100")
         editor.renameCategory(draft, 0, "Name questions:")
 
         val question = compiler.compile(listOf(BoardFile("b", draft.toText())), requireFullCategories = false)

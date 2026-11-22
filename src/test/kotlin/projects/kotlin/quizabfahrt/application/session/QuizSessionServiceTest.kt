@@ -10,6 +10,7 @@ import projects.kotlin.quizabfahrt.model.ContentField
 import projects.kotlin.quizabfahrt.model.EAnswerTypes
 import projects.kotlin.quizabfahrt.model.EQuestionTypes
 import projects.kotlin.quizabfahrt.model.Question
+import projects.kotlin.quizabfahrt.model.QuestionSettings
 import projects.kotlin.quizabfahrt.model.EInputTypes
 import projects.kotlin.quizabfahrt.model.QuestionRef
 import java.nio.file.Path
@@ -32,9 +33,9 @@ class QuizSessionServiceTest {
     private lateinit var session: QuizSession
 
     private fun question(points: Int) = Question(
-        points,
         Content.of(EQuestionTypes.TEXT, mapOf(ContentField.TEXT to "Frage")),
         Content.of(EAnswerTypes.TEXT, mapOf(ContentField.TEXT to "Antwort")),
+        QuestionSettings.of(mapOf("points" to points.toString())),
     )
 
     @BeforeEach
@@ -248,7 +249,9 @@ class QuizSessionServiceTest {
 
     private fun joinWithScore(name: String, points: Int) {
         val (_, player) = service.join(session.code, name, "1.1.1.1", null)
-        if (points != 0) service.toggleResult(session, QuestionRef(0, 0, player.id), player.id, Outcome.CORRECT, question(points))
+        val ref = QuestionRef(0, 0, player.id)
+        if (points > 0) service.toggleResult(session, ref, player.id, Outcome.CORRECT, question(points))
+        if (points < 0) service.toggleResult(session, ref, player.id, Outcome.WRONG, question(-points * 2))
     }
 
     @Test

@@ -11,11 +11,11 @@ import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.multipart
 import org.springframework.test.web.servlet.post
 import org.springframework.test.web.servlet.request.RequestPostProcessor
-import projects.kotlin.quizabfahrt.application.editor.BoardEditorService
 import projects.kotlin.quizabfahrt.model.ContentField
 import projects.kotlin.quizabfahrt.model.EAnswerTypes
 import projects.kotlin.quizabfahrt.model.EInputTypes
 import projects.kotlin.quizabfahrt.model.EQuestionTypes
+import projects.kotlin.quizabfahrt.model.QuestionSetting
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
@@ -124,7 +124,7 @@ class EditorControllerTest {
             cookie(draft); param("type", "text"); param("text", "Frage")
         }.andExpect { status { isOk() } }.andReturn().response.contentAsString
 
-        assertContains(html, "Die Punkte müssen")
+        assertContains(html, "„Punkte“ fehlt")
         assertContains(html, "name=\"points\"")
         assertContains(html, "name=\"input\"")
     }
@@ -143,7 +143,7 @@ class EditorControllerTest {
         assertContains(questionForm, "Lineup: Einträge im Text mit Komma trennen")
         assertContains(questionForm, "name=\"text\" rows=\"4\" maxlength=\"${ContentField.TEXT.maxLength}\"")
         assertContains(questionForm, "name=\"img\" maxlength=\"${ContentField.IMAGE.maxLength}\"")
-        assertContains(questionForm, "max=\"${BoardEditorService.MAX_POINTS}\"")
+        assertContains(questionForm, "max=\"${QuestionSetting.Points.getMax()}\"")
 
         val answerForm = page("/editor/categories/0/questions/0/answer", draft)
         assertEquals(EAnswerTypes.entries.map { it.key }, options(answerForm, "type"))

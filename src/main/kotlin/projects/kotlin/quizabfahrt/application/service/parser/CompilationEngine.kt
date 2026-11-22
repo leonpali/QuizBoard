@@ -16,7 +16,7 @@ class CompilationEngine {
         const val QUESTIONS_PER_CATEGORY = 6
         private val SECTION_HEADER = Regex("(category|question)(_\\d+)?:|answer:")
         private val CONTENT_KEYS = ContentField.entries.map { it.key }
-        private val QUESTION_KEYS = setOf("type", "points", "input") + CONTENT_KEYS
+        private val QUESTION_KEYS = setOf("type") + QuestionSetting.entries.map { it.key } + CONTENT_KEYS
         private val ANSWER_KEYS = setOf("type") + CONTENT_KEYS
     }
 
@@ -107,21 +107,17 @@ class CompilationEngine {
         advanceToken()
         val answerFields = readFields(ANSWER_KEYS)
 
-        val pointsField = questionFields["points"] ?: errorAt(questionLine, "'points:' fehlt")
-        val points = pointsField.value?.toIntOrNull() ?: errorAt(pointsField.line, "'points:' muss eine Zahl sein")
-
         return Question(
-            points,
             compileContent<EQuestionTypes>(questionFields, questionLine, "Frage"),
             compileContent<EAnswerTypes>(answerFields, answerLine, "Antwort"),
-            compileInput(questionFields["input"]),
+            compileSettings(questionFields, questionLine),
         )
     }
 
-    private fun compileInput(field: Field?): EInputTypes {
-        if (field?.value == null) return EInputTypes.DEFAULT
-        return typeOf<EInputTypes>(field.value)
-            ?: errorAt(field.line, "Unbekannte Eingabe '${field.value}' (erlaubt: ${EInputTypes.entries.joinToString { it.key }})")
+    private fun compileSettings(fields: Map<String, Field>, headerLine: Int): QuestionSettings = try {
+        QuestionSettings.of(fields.mapValues { it.value.value })
+    } catch (e: SettingException) {
+        errorAt(fields[e.setting.key]?.line ?: headerLine, e.message.orEmpty())
     }
 
     private fun readFields(allowedKeys: Set<String>): Map<String, Field> {

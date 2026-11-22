@@ -4,12 +4,11 @@ typealias QuestionContent = Content<EQuestionTypes>
 
 typealias AnswerContent = Content<EAnswerTypes>
 
-data class Question(
-    val points: Int,
-    val content: QuestionContent,
-    val answer: AnswerContent,
-    val input: EInputTypes = EInputTypes.DEFAULT,
-) {
+data class Question(val content: QuestionContent, val answer: AnswerContent, val settings: QuestionSettings) {
+
+    val points: Int get() = settings[QuestionSetting.Points]
+
+    val input: EInputTypes get() = settings[QuestionSetting.Input]
 
     fun getTypeKey(): String = content.type.key
 

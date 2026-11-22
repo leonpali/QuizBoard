@@ -20,11 +20,12 @@ import projects.kotlin.quizabfahrt.application.editor.BoardEditorService
 import projects.kotlin.quizabfahrt.application.editor.ContentInput
 import projects.kotlin.quizabfahrt.application.editor.FormField
 import projects.kotlin.quizabfahrt.application.editor.MoveDirection
+import projects.kotlin.quizabfahrt.application.editor.SettingsInput
 import projects.kotlin.quizabfahrt.application.service.parser.CompilationEngine
 import projects.kotlin.quizabfahrt.model.ContentType
 import projects.kotlin.quizabfahrt.model.EAnswerTypes
-import projects.kotlin.quizabfahrt.model.EInputTypes
 import projects.kotlin.quizabfahrt.model.EQuestionTypes
+import projects.kotlin.quizabfahrt.model.QuestionSetting
 import java.time.Duration
 import java.time.Instant
 
@@ -132,7 +133,7 @@ class EditorController(private val editor: BoardEditorService) {
     @GetMapping("/categories/{c}/questions/{q}/question")
     fun questionForm(model: Model, @PathVariable c: Int, @PathVariable q: Int, @EditorDraft draft: BoardDraft): String {
         val question = synchronized(draft) { draft.getQuestion(c, q) }
-        return questionPage(model, draft, c, q, ContentInput.of(question))
+        return questionPage(model, draft, c, q, ContentInput.of(question.content), SettingsInput.of(question.settings))
     }
 
     @PostMapping("/categories/{c}/questions/{q}/question")
@@ -144,7 +145,8 @@ class EditorController(private val editor: BoardEditorService) {
         @EditorDraft draft: BoardDraft,
     ): String {
         val form = ContentInput.fromForm(params)
-        return tryChange(model, { questionPage(model, draft, c, q, form) }) { editor.updateQuestion(draft, c, q, form) }
+        val settings = SettingsInput.fromForm(params)
+        return tryChange(model, { questionPage(model, draft, c, q, form, settings) }) { editor.updateQuestion(draft, c, q, form, settings) }
             ?: "redirect:/editor/categories/$c"
     }
 
@@ -214,15 +216,21 @@ class EditorController(private val editor: BoardEditorService) {
         page()
     }
 
-    private fun questionPage(model: Model, draft: BoardDraft, c: Int, q: Int, form: ContentInput) =
-        contentPage(model, draft, c, form, EQuestionTypes.entries, "Frage ${q + 1} bearbeiten", "/editor/categories/$c/questions/$q/question", forQuestion = true)
+    private fun questionPage(model: Model, draft: BoardDraft, c: Int, q: Int, form: ContentInput, settings: SettingsInput): String {
+        model.addAttribute("settings", QuestionSetting.entries)
+        model.addAttribute("settingsForm", settings)
+        return contentPage(model, draft, c, form, EQuestionTypes.entries, "Frage ${q + 1} bearbeiten", "/editor/categories/$c/questions/$q/question")
+    }
 
-    private fun answerPage(model: Model, draft: BoardDraft, c: Int, q: Int, form: ContentInput) =
-        contentPage(model, draft, c, form, EAnswerTypes.entries, "Antwort zu Frage ${q + 1} bearbeiten", "/editor/categories/$c/questions/$q/answer", forQuestion = false)
+    private fun answerPage(model: Model, draft: BoardDraft, c: Int, q: Int, form: ContentInput): String {
+        model.addAttribute("settings", emptyList<QuestionSetting<*>>())
+        model.addAttribute("settingsForm", SettingsInput.NONE)
+        return contentPage(model, draft, c, form, EAnswerTypes.entries, "Antwort zu Frage ${q + 1} bearbeiten", "/editor/categories/$c/questions/$q/answer")
+    }
 
     private fun contentPage(
         model: Model, draft: BoardDraft, c: Int, form: ContentInput,
-        types: List<ContentType>, title: String, action: String, forQuestion: Boolean,
+        types: List<ContentType>, title: String, action: String,
     ): String {
         model.addAttribute("categoryName", synchronized(draft) { draft.getCategory(c).name })
         model.addAttribute("c", c)
@@ -232,9 +240,6 @@ class EditorController(private val editor: BoardEditorService) {
         model.addAttribute("types", types)
         model.addAttribute("typeHints", types.mapNotNull { type -> type.hint?.let { "${type.label}: $it" } })
         model.addAttribute("fields", FormField.of(types))
-        model.addAttribute("forQuestion", forQuestion)
-        model.addAttribute("inputs", EInputTypes.entries)
-        model.addAttribute("maxPoints", BoardEditorService.MAX_POINTS)
         return "editorContent"
     }
 }

@@ -3,18 +3,12 @@ package projects.kotlin.quizabfahrt.application.editor
 import projects.kotlin.quizabfahrt.model.Content
 import projects.kotlin.quizabfahrt.model.ContentField
 import projects.kotlin.quizabfahrt.model.ContentType
-import projects.kotlin.quizabfahrt.model.Question
+import projects.kotlin.quizabfahrt.model.QuestionSetting
+import projects.kotlin.quizabfahrt.model.QuestionSettings
 
-data class ContentInput(
-    val typeKey: String,
-    private val values: Map<String, String?>,
-    val points: String? = null,
-    val inputKey: String? = null,
-) {
+data class ContentInput(val typeKey: String, private val values: Map<String, String?>) {
 
     fun isType(key: String) = typeKey == key
-
-    fun isInput(key: String) = inputKey == key
 
     fun getValue(key: String): String? = values[key]
 
@@ -23,14 +17,23 @@ data class ContentInput(
     companion object {
         fun of(content: Content<*>) = ContentInput(content.type.key, content.values.mapKeys { it.key.key })
 
-        fun of(question: Question) = of(question.content).copy(points = question.points.toString(), inputKey = question.input.key)
+        fun fromForm(params: Map<String, String>) =
+            ContentInput(params["type"].orEmpty(), ContentField.entries.associate { it.key to params[it.key] })
+    }
+}
 
-        fun fromForm(params: Map<String, String>) = ContentInput(
-            params["type"].orEmpty(),
-            ContentField.entries.associate { it.key to params[it.key] },
-            params["points"],
-            params["input"],
-        )
+data class SettingsInput(val values: Map<String, String?>) {
+
+    fun getValue(key: String): String? = values[key]
+
+    fun isValue(key: String, value: String) = values[key] == value
+
+    companion object {
+        val NONE = SettingsInput(emptyMap())
+
+        fun of(settings: QuestionSettings) = SettingsInput(settings.getFormatted())
+
+        fun fromForm(params: Map<String, String>) = SettingsInput(QuestionSetting.entries.associate { it.key to params[it.key] })
     }
 }
 

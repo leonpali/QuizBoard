@@ -94,7 +94,7 @@ class CompilationEngineTest {
     @Test
     fun `missing type, points and required fields are reported at the question`() {
         assertEquals("Board_1.txt, Zeile 4: Frage: 'type:' fehlt", parseError(board("text: Frage\npoints: 100\nanswer:\ntype: text\ntext: A")))
-        assertEquals("Board_1.txt, Zeile 4: 'points:' fehlt", parseError(board("type: text\ntext: Frage\nanswer:\ntype: text\ntext: A")))
+        assertEquals("Board_1.txt, Zeile 4: „Punkte“ fehlt", parseError(board("type: text\ntext: Frage\nanswer:\ntype: text\ntext: A")))
         assertEquals(
             "Board_1.txt, Zeile 4: Frage: Für den Typ „Bild“ fehlt: Bild",
             parseError(board("type: img\ntext: Frage\npoints: 100\nanswer:\ntype: text\ntext: A")),
@@ -117,7 +117,11 @@ class CompilationEngineTest {
         assertEquals(listOf(EInputTypes.BUZZER, EInputTypes.TEXT, EInputTypes.BUZZER), questions.map { it.input })
         assertContains(
             parseError(board("type: text\ntext: F\npoints: 100\ninput: gesten\nanswer:\ntype: text\ntext: A")),
-            "Zeile 8: Unbekannte Eingabe 'gesten' (erlaubt: buzzer, text",
+            "Zeile 8: „Eingabe der Teilnehmer“ muss eins von buzzer, text",
+        )
+        assertEquals(
+            "Board_1.txt, Zeile 7: „Punkte“ muss eine ganze Zahl zwischen 0 und 100000 sein, gefunden: '-5'",
+            parseError(board("type: text\ntext: F\npoints: -5\nanswer:\ntype: text\ntext: A")),
         )
     }
 

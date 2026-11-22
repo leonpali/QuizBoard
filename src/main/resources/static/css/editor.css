@@ -149,7 +149,7 @@ select.text-input {
     font-family: inherit;
 }
 
-.points-input {
+.number-input {
     max-width: 10em;
 }
 

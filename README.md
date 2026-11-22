@@ -81,7 +81,7 @@ category_2:
 | Question `type` | `text` (shows `text`), `img` (shows `img`), `lineup` (`text` is a comma-separated list, revealed item by item with "Aufdecken") |
 | Answer `type` | `text`, `img`, `textimage` (image and text) |
 | `img` | File name of an uploaded image; leave it out, empty or `null` if the type doesn't need it |
-| `points` | Any whole number. A wrong answer deducts half (rounded down). |
+| `points` | Whole number from 0 to 100000. A wrong answer deducts half (rounded down). |
 | `input` | Optional, how participants answer: `buzzer` (default) or `text` (they type an answer that the host sees when scoring) |
 
 Errors in a file are reported on upload with the file name and line number.
@@ -91,7 +91,7 @@ Errors in a file are reported on upload with the file name and line number.
 Instead of writing board files by hand, use **Board bearbeiten** on the start page (`/editor`). Start with an empty board or upload an existing file, then:
 
 1. The overview lists the categories and how many questions each has. Add, open, reorder (↑ ↓) or delete categories here.
-2. A category shows its questions, which can be reordered the same way; the order is the row on the board. Each question has **Frage bearbeiten** (type, text, image name, points) and **Antwort bearbeiten** (type, text, image name). The forms check the same rules as the parser, so the result is always a valid file.
+2. A category shows its questions, which can be reordered the same way; the order is the row on the board. Each question has **Frage bearbeiten** (type, text, image name, points, participant input) and **Antwort bearbeiten** (type, text, image name). The forms check the same rules as the parser, so the result is always a valid file.
 3. **Herunterladen** saves the board as a `.txt` file.
 
 Nothing is stored permanently. The draft only exists in memory, tied to the device by a cookie, and is deleted as soon as the file is downloaded, or 6 hours after the last change. Categories may have fewer or more than 6 questions while you work on them; the editor warns about it but still lets you download and upload the file again later. Only playing a quiz requires exactly 6 questions per category. The editor works with image names only; the images themselves are uploaded when creating the quiz.
@@ -216,7 +216,7 @@ The Content-Security-Policy blocks every script that doesn't carry the request's
 
 ## Adding a question or answer type
 
-A question is `Question(points, content, answer)`, where `content` and `answer` are `Content` objects: a type plus the values of its fields. Types and fields are declared once, and parser, writer, editor and validation work from these declarations:
+A question is `Question(content, answer, settings)`, where `content` and `answer` are `Content` objects: a type plus the values of its fields. Types and fields are declared once, and parser, writer, editor and validation work from these declarations:
 
 - `ContentField` lists the kinds of fields (`text`, `img`) with their maximum length, which the editor checks in the browser and on the server. File fields also declare their allowed extensions, which drive the upload check and the editor hints.
 - `EQuestionTypes` and `EAnswerTypes` declare each type's key (the word in board files), its label (shown in the editor) and the fields it needs.
@@ -230,6 +230,21 @@ To add a type, e.g. an audio question:
 4. Describe it in the board template (`static/downloads/Board_Vorlage.txt`) and in the board format table above.
 
 The board file format, the editor form with its type dropdown and fields, uploads and the round trip between editor and file need no changes. `TypeTemplatesTest` fails if a type has no fragment, so a forgotten step 3 shows up in the build.
+
+## Adding a question setting
+
+Settings are the values of a question that aren't displayed content, like `points` and `input`. Each one is declared once in `QuestionSetting`, with its key (the word in board files), its label, its default (`null` means required) and how it is read. Parser, writer, editor form and validation work from the list `QuestionSetting.entries`:
+
+- `NumberSetting` takes a whole number within a range; the editor shows a number field with that minimum and maximum.
+- `ChoiceSetting` takes one key of a `KeyedType` enum; the editor shows a dropdown.
+
+To add a setting, e.g. a time limit:
+
+1. Declare it in `QuestionSetting` and add it to `entries`, e.g. `data object TimeLimit : NumberSetting("time", "Zeitlimit in Sekunden", default = 0, 0..600)`. For other kinds of values, extend `QuestionSetting` directly with `parse` and `describe`.
+2. Read it where it's needed with `question.settings[QuestionSetting.TimeLimit]`, or add a property to `Question` if it's used in several places, like `points`.
+3. Describe it in the board template and in the board format table above.
+
+Missing or invalid values are reported with the setting's label, in the editor and with the line number in board files.
 
 ## Adding a participant input type
 

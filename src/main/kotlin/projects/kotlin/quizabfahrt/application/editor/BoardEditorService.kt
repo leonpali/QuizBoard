@@ -11,9 +11,11 @@ import projects.kotlin.quizabfahrt.model.ContentException
 import projects.kotlin.quizabfahrt.model.ContentField
 import projects.kotlin.quizabfahrt.model.ContentType
 import projects.kotlin.quizabfahrt.model.EAnswerTypes
-import projects.kotlin.quizabfahrt.model.EInputTypes
 import projects.kotlin.quizabfahrt.model.EQuestionTypes
 import projects.kotlin.quizabfahrt.model.Question
+import projects.kotlin.quizabfahrt.model.QuestionSetting
+import projects.kotlin.quizabfahrt.model.QuestionSettings
+import projects.kotlin.quizabfahrt.model.SettingException
 import projects.kotlin.quizabfahrt.model.typeOf
 import java.time.Duration
 import java.time.Instant
@@ -27,7 +29,6 @@ class BoardEditorService(private val compiler: CompilationEngine) {
         const val MAX_CATEGORIES = 12
         const val MAX_QUESTIONS = 12
         const val MAX_NAME_LENGTH = 100
-        const val MAX_POINTS = 100_000
         const val DEFAULT_FILE_NAME = "Board.txt"
         val DRAFT_TTL: Duration = Duration.ofHours(6)
         const val MAX_UPLOAD_BYTES = 1_000_000
@@ -110,15 +111,12 @@ class BoardEditorService(private val compiler: CompilationEngine) {
         draft.removeQuestion(categoryIndex, questionIndex)
     }
 
-    fun updateQuestion(draft: BoardDraft, categoryIndex: Int, questionIndex: Int, input: ContentInput) = change(draft) {
-        val points = input.points?.trim()?.toIntOrNull()?.takeIf { it in 0..MAX_POINTS }
-            ?: throw BoardEditorException("Die Punkte müssen eine ganze Zahl zwischen 0 und $MAX_POINTS sein.")
-        val content = buildContent<EQuestionTypes>(input)
-        val inputType = typeOf<EInputTypes>(input.inputKey)
-            ?: throw BoardEditorException("Unbekannte Eingabe der Teilnehmer '${input.inputKey.orEmpty()}'.")
-        val question = draft.getQuestion(categoryIndex, questionIndex)
-        draft.setQuestion(categoryIndex, questionIndex, question.copy(points = points, content = content, input = inputType))
-    }
+    fun updateQuestion(draft: BoardDraft, categoryIndex: Int, questionIndex: Int, content: ContentInput, settings: SettingsInput) =
+        change(draft) {
+            val question = draft.getQuestion(categoryIndex, questionIndex)
+            val changed = question.copy(content = buildContent<EQuestionTypes>(content), settings = buildSettings(settings))
+            draft.setQuestion(categoryIndex, questionIndex, changed)
+        }
 
     fun updateAnswer(draft: BoardDraft, categoryIndex: Int, questionIndex: Int, input: ContentInput) = change(draft) {
         val question = draft.getQuestion(categoryIndex, questionIndex)
@@ -163,10 +161,16 @@ class BoardEditorService(private val compiler: CompilationEngine) {
         clean(value, label, maxLength) ?: throw BoardEditorException("$label darf nicht leer sein.")
 
     private fun newQuestion(points: Int) = Question(
-        points,
         Content.of(EQuestionTypes.TEXT, mapOf(ContentField.TEXT to "Neue Frage")),
         Content.of(EAnswerTypes.TEXT, mapOf(ContentField.TEXT to "Antwort")),
+        QuestionSettings.of(mapOf(QuestionSetting.Points.key to points.toString())),
     )
+
+    private fun buildSettings(input: SettingsInput): QuestionSettings = try {
+        QuestionSettings.of(input.values)
+    } catch (e: SettingException) {
+        throw BoardEditorException(e.message.orEmpty())
+    }
 
     private inline fun <reified T> buildContent(input: ContentInput): Content<T> where T : Enum<T>, T : ContentType {
         val type = typeOf<T>(input.typeKey) ?: throw BoardEditorException("Unbekannter Typ '${input.typeKey}'.")
